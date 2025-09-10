@@ -6,6 +6,11 @@ import 'package:hanindyamom/theme/app_theme.dart';
 import 'package:hanindyamom/screens/auth/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hanindyamom/repositories/timeline_repository.dart';
+import 'package:hanindyamom/providers/selected_baby_provider.dart';
+import 'package:hanindyamom/screens/feeding/feeding_list_screen.dart';
+import 'package:hanindyamom/screens/diaper/diaper_list_screen.dart';
+import 'package:hanindyamom/screens/sleep/sleep_list_screen.dart';
+import 'package:hanindyamom/screens/growth/growth_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,12 +32,15 @@ class HanindyaMomApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) {
-        final repo = TimelineRepository();
-        repo.seedMock();
-        return repo;
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) {
+          final repo = TimelineRepository();
+          repo.seedMock();
+          return repo;
+        }),
+        ChangeNotifierProvider(create: (_) => SelectedBabyProvider()),
+      ],
       child: MaterialApp(
         title: 'HanindyaMom',
         debugShowCheckedModeBanner: false,
@@ -40,6 +48,10 @@ class HanindyaMomApp extends StatelessWidget {
         home: const LoginScreen(),
         routes: {
           '/login': (context) => const LoginScreen(),
+          '/feeding_list': (context) => const FeedingListRouteGuard(),
+          '/diaper_list': (context) => const DiaperListRouteGuard(),
+          '/sleep_list': (context) => const SleepListRouteGuard(),
+          '/growth_list': (context) => const GrowthListRouteGuard(),
         },
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
@@ -52,5 +64,54 @@ class HanindyaMomApp extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// Route guard sederhana: pastikan ada babyId
+class FeedingListRouteGuard extends StatelessWidget {
+  const FeedingListRouteGuard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) {
+      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+    }
+    return const FeedingListScreen();
+  }
+}
+
+class DiaperListRouteGuard extends StatelessWidget {
+  const DiaperListRouteGuard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) {
+      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+    }
+    return const DiaperListScreen();
+  }
+}
+
+class SleepListRouteGuard extends StatelessWidget {
+  const SleepListRouteGuard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) {
+      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+    }
+    return const SleepListScreen();
+  }
+}
+
+class GrowthListRouteGuard extends StatelessWidget {
+  const GrowthListRouteGuard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) {
+      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+    }
+    return const GrowthListScreen();
   }
 }

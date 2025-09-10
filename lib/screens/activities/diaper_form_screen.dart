@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/diaper.dart';
+import 'package:hanindyamom/services/diaper_service.dart';
 
 class DiaperFormScreen extends StatefulWidget {
   final String babyId;
@@ -86,32 +87,27 @@ class _DiaperFormScreenState extends State<DiaperFormScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
-    // Simulasi save (dalam implementasi nyata akan save ke database/API)
-    await Future.delayed(const Duration(seconds: 1));
-
-    final diaper = Diaper(
-      id: isEditing 
-          ? widget.diaper!.id 
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      babyId: widget.babyId,
-      changeTime: _changeTime,
-      type: _selectedType,
-      color: _selectedColor,
-      texture: _selectedTexture,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-    );
-
-    if (mounted) {
+    try {
+      final isoTime = DateFormat('yyyy-MM-ddTHH:mm:ss').format(_changeTime);
+      await DiaperService().create(
+        babyId: widget.babyId,
+        type: _mapDiaperType(_selectedType),
+        time: isoTime,
+        color: _selectedColor?.displayName,
+        texture: _selectedTexture?.displayName,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pop(diaper);
-      
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing 
-              ? 'Data popok berhasil diupdate' 
-              : 'Data popok berhasil ditambahkan'),
-        ),
+        SnackBar(content: Text(isEditing ? 'Data popok diperbarui' : 'Data popok ditambahkan')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e')),
       );
     }
   }
@@ -365,6 +361,17 @@ class _DiaperFormScreenState extends State<DiaperFormScreen> {
         return Icons.circle;
       case DiaperType.mixed:
         return Icons.blur_circular;
+    }
+  }
+
+  String _mapDiaperType(DiaperType type) {
+    switch (type) {
+      case DiaperType.wet:
+        return 'pipis';
+      case DiaperType.dirty:
+        return 'pup';
+      case DiaperType.mixed:
+        return 'campuran';
     }
   }
 

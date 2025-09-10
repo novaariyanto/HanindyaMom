@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/auth/register_screen.dart';
 import 'package:hanindyamom/screens/main_screen.dart';
+import 'package:hanindyamom/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,16 +28,21 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
-    // Simulasi login (dalam implementasi nyata, panggil API)
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
+    try {
+      await AuthService().login(
+        username: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      
-      // Navigate to main screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal: $e')),
       );
     }
   }

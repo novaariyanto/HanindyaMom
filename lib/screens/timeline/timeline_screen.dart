@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:hanindyamom/providers/selected_baby_provider.dart';
+import 'package:hanindyamom/services/timeline_service.dart';
+import 'package:hanindyamom/services/feeding_service.dart';
+import 'package:hanindyamom/services/diaper_service.dart';
+import 'package:hanindyamom/services/sleep_service.dart';
+import 'package:hanindyamom/services/growth_service.dart';
+import 'package:hanindyamom/screens/activities/feeding_form_screen.dart';
+import 'package:hanindyamom/screens/activities/diaper_form_screen.dart';
+import 'package:hanindyamom/screens/activities/sleep_form_screen.dart';
+import 'package:hanindyamom/screens/growth/growth_form_screen.dart';
+import 'package:hanindyamom/models/feeding.dart' as fm;
+import 'package:hanindyamom/models/diaper.dart' as dm;
+import 'package:hanindyamom/models/sleep.dart' as sm;
 
 enum ActivityFilter { all, feeding, diaper, sleep, growth, milestone, nutrition }
 
@@ -12,105 +26,49 @@ class TimelineScreen extends StatefulWidget {
 
 class _TimelineScreenState extends State<TimelineScreen> {
   ActivityFilter _selectedFilter = ActivityFilter.all;
-  
-  // Mock data untuk demo
   List<TimelineActivity> activities = [];
+  bool _loading = true;
+  String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _generateMockData();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchTimeline();
   }
 
-  void _generateMockData() {
-    final now = DateTime.now();
-    
-    activities = [
-      TimelineActivity(
-        id: '1',
-        type: ActivityType.feeding,
-        time: now.subtract(const Duration(minutes: 30)),
-        title: 'ASI Kiri',
-        subtitle: '15 menit',
-        icon: Icons.restaurant,
-        color: Colors.blue,
-      ),
-      TimelineActivity(
-        id: '2',
-        type: ActivityType.diaper,
-        time: now.subtract(const Duration(hours: 1)),
-        title: 'Ganti Popok',
-        subtitle: 'Pipis',
-        icon: Icons.baby_changing_station,
-        color: Colors.orange,
-      ),
-      TimelineActivity(
-        id: '3',
-        type: ActivityType.sleep,
-        time: now.subtract(const Duration(hours: 2)),
-        title: 'Tidur',
-        subtitle: '1j 30m',
-        icon: Icons.bedtime,
-        color: Colors.purple,
-      ),
-      TimelineActivity(
-        id: '4',
-        type: ActivityType.feeding,
-        time: now.subtract(const Duration(hours: 3)),
-        title: 'Formula',
-        subtitle: '120ml • 10 menit',
-        icon: Icons.restaurant,
-        color: Colors.blue,
-      ),
-      TimelineActivity(
-        id: '5',
-        type: ActivityType.diaper,
-        time: now.subtract(const Duration(hours: 4)),
-        title: 'Ganti Popok',
-        subtitle: 'Pup • Kuning • Lembek',
-        icon: Icons.baby_changing_station,
-        color: Colors.orange,
-      ),
-      TimelineActivity(
-        id: '6',
-        type: ActivityType.sleep,
-        time: now.subtract(const Duration(hours: 6)),
-        title: 'Tidur',
-        subtitle: '2j 15m',
-        icon: Icons.bedtime,
-        color: Colors.purple,
-      ),
-      // Growth log
-      TimelineActivity(
-        id: '7',
-        type: ActivityType.growth,
-        time: now.subtract(const Duration(hours: 7)),
-        title: 'Growth Update',
-        subtitle: 'Berat 8.2 kg • Tinggi 69 cm',
-        icon: Icons.monitor_weight,
-        color: Colors.pink,
-      ),
-      // Milestone log
-      TimelineActivity(
-        id: '8',
-        type: ActivityType.milestone,
-        time: now.subtract(const Duration(hours: 10)),
-        title: 'Milestone Tercapai',
-        subtitle: 'Berdiri tanpa bantuan',
-        icon: Icons.emoji_events,
-        color: Colors.amber,
-      ),
-      // Nutrition log
-      TimelineActivity(
-        id: '9',
-        type: ActivityType.nutrition,
-        time: now.subtract(const Duration(hours: 11)),
-        title: 'Menu Harian',
-        subtitle: 'MPASI: bubur ayam + sayur',
-        icon: Icons.restaurant_menu,
-        color: Colors.green,
-      ),
-    ];
+  Future<void> _fetchTimeline() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final raw = await TimelineService().list(babyId);
+      activities = raw.map<TimelineActivity>((e) {
+        final typeStr = (e['type'] as String?) ?? '';
+        final timeStr = e['time'] ?? e['start_time'] ?? e['date'];
+        final time = DateTime.tryParse(timeStr) ?? DateTime.now();
+        final title = e['title'] ?? e['name'] ?? typeStr.toUpperCase();
+        final subtitle = e['subtitle'] ?? e['notes'] ?? '';
+        final map = _mapType(typeStr);
+        return TimelineActivity(
+          id: (e['id']?.toString() ?? time.microsecondsSinceEpoch.toString()),
+          type: map.type,
+          time: time,
+          title: title,
+          subtitle: subtitle,
+          icon: map.icon,
+          color: map.color,
+        );
+      }).toList();
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
   }
 
   List<TimelineActivity> get filteredActivities {
@@ -146,16 +104,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildFilterChips(),
-          Expanded(
-            child: filteredActivities.isEmpty 
-                ? _buildEmptyState() 
-                : _buildTimeline(),
-          ),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+              ? Center(child: Text('Gagal memuat: $_error'))
+              : Column(
+                  children: [
+                    _buildFilterChips(),
+                    Expanded(
+                      child: filteredActivities.isEmpty ? _buildEmptyState() : _buildTimeline(),
+                    ),
+                  ],
+                )),
     );
   }
 
@@ -459,10 +419,28 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   void _editActivity(TimelineActivity activity) {
-    // TODO: Implement edit functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur edit belum tersedia')),
-    );
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    switch (activity.type) {
+      case ActivityType.feeding:
+        _editFeeding(activity.id, babyId);
+        break;
+      case ActivityType.diaper:
+        _editDiaper(activity.id, babyId);
+        break;
+      case ActivityType.sleep:
+        _editSleep(activity.id, babyId);
+        break;
+      case ActivityType.growth:
+        _editGrowth(activity.id, babyId);
+        break;
+      case ActivityType.milestone:
+      case ActivityType.nutrition:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Edit belum tersedia untuk item ini')),
+        );
+        break;
+    }
   }
 
   void _deleteActivity(TimelineActivity activity) {
@@ -478,13 +456,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                activities.removeWhere((a) => a.id == activity.id);
-              });
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Aktivitas telah dihapus')),
-              );
+              _performDelete(activity);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -495,6 +467,205 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _performDelete(TimelineActivity activity) async {
+    try {
+      switch (activity.type) {
+        case ActivityType.feeding:
+          await FeedingService().delete(activity.id);
+          break;
+        case ActivityType.diaper:
+          await DiaperService().delete(activity.id);
+          break;
+        case ActivityType.sleep:
+          await SleepService().delete(activity.id);
+          break;
+        case ActivityType.growth:
+          await GrowthService().delete(activity.id);
+          break;
+        case ActivityType.milestone:
+        case ActivityType.nutrition:
+          // belum ada endpoint spesifik
+          break;
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      await _fetchTimeline();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aktivitas telah dihapus')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghapus: $e')),
+      );
+    }
+  }
+
+  Future<void> _editFeeding(String id, String babyId) async {
+    try {
+      final f = await FeedingService().getById(id);
+      final type = _mapFeedingType(f.type);
+      final start = DateTime.tryParse(f.startTime) ?? DateTime.now();
+      final feeding = fm.Feeding(
+        id: f.id,
+        babyId: f.babyId,
+        type: type,
+        startTime: start,
+        durationMinutes: f.durationMinutes,
+        notes: f.notes,
+      );
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FeedingFormScreen(babyId: babyId, feeding: feeding),
+        ),
+      );
+      _fetchTimeline();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat feeding: $e')));
+    }
+  }
+
+  Future<void> _editDiaper(String id, String babyId) async {
+    try {
+      final d = await DiaperService().getById(id);
+      final type = _mapDiaperTypeFromString(d.type);
+      final time = DateTime.tryParse(d.time) ?? DateTime.now();
+      final diaper = dm.Diaper(
+        id: d.id,
+        babyId: d.babyId,
+        changeTime: time,
+        type: type,
+        color: _mapDiaperColor(d.color),
+        texture: _mapDiaperTexture(d.texture),
+        notes: d.notes,
+      );
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DiaperFormScreen(babyId: babyId, diaper: diaper),
+        ),
+      );
+      _fetchTimeline();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat diaper: $e')));
+    }
+  }
+
+  Future<void> _editSleep(String id, String babyId) async {
+    try {
+      final s = await SleepService().getById(id);
+      final start = DateTime.tryParse(s.startTime) ?? DateTime.now();
+      final end = DateTime.tryParse(s.endTime) ?? DateTime.now();
+      final sleep = sm.Sleep(
+        id: s.id,
+        babyId: s.babyId,
+        startTime: start,
+        endTime: end,
+        notes: s.notes,
+      );
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SleepFormScreen(babyId: babyId, sleep: sleep),
+        ),
+      );
+      _fetchTimeline();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat tidur: $e')));
+    }
+  }
+
+  Future<void> _editGrowth(String id, String babyId) async {
+    try {
+      final g = await GrowthService().getById(id);
+      final weightCtrl = TextEditingController(text: g.weight.toString());
+      final heightCtrl = TextEditingController(text: g.height.toString());
+      final headCtrl = TextEditingController(text: g.headCircumference?.toString() ?? '');
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Edit Growth'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: weightCtrl, decoration: const InputDecoration(labelText: 'Berat (kg)')),
+              TextField(controller: heightCtrl, decoration: const InputDecoration(labelText: 'Tinggi (cm)')),
+              TextField(controller: headCtrl, decoration: const InputDecoration(labelText: 'Lingkar Kepala (cm)')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await GrowthService().update(
+                    id,
+                    weight: double.tryParse(weightCtrl.text),
+                    height: double.tryParse(heightCtrl.text),
+                    headCircumference: double.tryParse(headCtrl.text),
+                  );
+                  if (!mounted) return;
+                  Navigator.of(context).pop();
+                  _fetchTimeline();
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+                }
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat growth: $e')));
+    }
+  }
+
+  fm.FeedingType _mapFeedingType(String t) {
+    switch (t) {
+      case 'asi_left':
+        return fm.FeedingType.breastLeft;
+      case 'asi_right':
+        return fm.FeedingType.breastRight;
+      case 'formula':
+        return fm.FeedingType.formula;
+      case 'pump':
+        return fm.FeedingType.pump;
+      default:
+        return fm.FeedingType.breastLeft;
+    }
+  }
+
+  dm.DiaperType _mapDiaperTypeFromString(String t) {
+    switch (t) {
+      case 'pipis':
+        return dm.DiaperType.wet;
+      case 'pup':
+        return dm.DiaperType.dirty;
+      case 'campuran':
+        return dm.DiaperType.mixed;
+      default:
+        return dm.DiaperType.wet;
+    }
+  }
+
+  dm.DiaperColor? _mapDiaperColor(String? name) {
+    if (name == null) return null;
+    for (final v in dm.DiaperColor.values) {
+      if (v.displayName.toLowerCase() == name.toLowerCase()) return v;
+    }
+    return null;
+  }
+
+  dm.DiaperTexture? _mapDiaperTexture(String? name) {
+    if (name == null) return null;
+    for (final v in dm.DiaperTexture.values) {
+      if (v.displayName.toLowerCase() == name.toLowerCase()) return v;
+    }
+    return null;
   }
 }
 
@@ -518,4 +689,38 @@ class TimelineActivity {
     required this.icon,
     required this.color,
   });
+}
+
+class _TypeMap {
+  final ActivityType type;
+  final IconData icon;
+  final Color color;
+  _TypeMap(this.type, this.icon, this.color);
+}
+
+_TypeMap _mapType(String t) {
+  switch (t.toLowerCase()) {
+    case 'feeding':
+    case 'asi_left':
+    case 'asi_right':
+    case 'formula':
+    case 'pump':
+      return _TypeMap(ActivityType.feeding, Icons.restaurant, Colors.blue);
+    case 'diaper':
+    case 'pipis':
+    case 'pup':
+    case 'campuran':
+      return _TypeMap(ActivityType.diaper, Icons.baby_changing_station, Colors.orange);
+    case 'sleep':
+      return _TypeMap(ActivityType.sleep, Icons.bedtime, Colors.purple);
+    case 'growth':
+      return _TypeMap(ActivityType.growth, Icons.monitor_weight, Colors.pink);
+    case 'milestone':
+      return _TypeMap(ActivityType.milestone, Icons.emoji_events, Colors.amber);
+    case 'nutrition':
+    case 'menu':
+      return _TypeMap(ActivityType.nutrition, Icons.restaurant_menu, Colors.green);
+    default:
+      return _TypeMap(ActivityType.feeding, Icons.info_outline, Colors.grey);
+  }
 }

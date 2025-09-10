@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/feeding.dart';
+import 'package:hanindyamom/services/feeding_service.dart';
+import 'package:intl/intl.dart';
 
 class FeedingFormScreen extends StatefulWidget {
   final String babyId;
@@ -81,34 +83,26 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
-    // Simulasi save (dalam implementasi nyata akan save ke database/API)
-    await Future.delayed(const Duration(seconds: 1));
-
-    final feeding = Feeding(
-      id: isEditing 
-          ? widget.feeding!.id 
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      babyId: widget.babyId,
-      type: _selectedType,
-      startTime: _startTime,
-      durationMinutes: int.parse(_durationController.text),
-      amount: showAmountField && _amountController.text.isNotEmpty
-          ? double.tryParse(_amountController.text)
-          : null,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-    );
-
-    if (mounted) {
+    try {
+      final isoStart = DateFormat('yyyy-MM-ddTHH:mm:ss').format(_startTime);
+      await FeedingService().create(
+        babyId: widget.babyId,
+        type: _selectedType.name,
+        startTime: isoStart,
+        durationMinutes: int.parse(_durationController.text),
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pop(feeding);
-      
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing 
-              ? 'Feeding berhasil diupdate' 
-              : 'Feeding berhasil ditambahkan'),
-        ),
+        SnackBar(content: Text(isEditing ? 'Feeding diperbarui' : 'Feeding ditambahkan')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e')),
       );
     }
   }

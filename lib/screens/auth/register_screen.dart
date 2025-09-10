@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/main_screen.dart';
+import 'package:hanindyamom/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -42,15 +43,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulasi registrasi (dalam implementasi nyata, panggil API)
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
+    try {
+      await AuthService().register(
+        name: _nameController.text.trim(),
+        username: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        email: _emailController.text.trim(),
+      );
+      await AuthService().login(
+        username: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      
-      // Navigate to main screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registrasi gagal: $e')),
       );
     }
   }

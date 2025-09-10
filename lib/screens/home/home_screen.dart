@@ -3,12 +3,17 @@ import 'package:hanindyamom/models/baby.dart';
 import 'package:hanindyamom/models/growth.dart';
 import 'package:hanindyamom/models/milestone.dart';
 import 'package:hanindyamom/models/nutrition.dart';
+import 'package:hanindyamom/models/api_models.dart';
+import 'package:hanindyamom/services/baby_service.dart';
+import 'package:hanindyamom/services/growth_service.dart';
 import 'package:hanindyamom/screens/baby/baby_form_screen.dart';
 import 'package:hanindyamom/screens/growth/growth_screen.dart';
 import 'package:hanindyamom/screens/milestone/milestone_screen.dart';
 import 'package:hanindyamom/screens/nutrition/nutrition_form_screen.dart';
 import 'package:hanindyamom/screens/tips/activity_tips_screen.dart';
 import 'package:hanindyamom/screens/vaccine/vaccine_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:hanindyamom/providers/selected_baby_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,27 +23,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Mock data - dalam implementasi nyata akan dari database/API
-  List<Baby> babies = [
-    Baby(
-      id: '1',
-      name: 'Alya Zahra',
-      birthDate: DateTime(2022, 12, 15),
-      photoPath: null,
-      weight: 12.0,
-      height: 86.0,
-      gender: 'female',
-    ),
-  ];
+  // Data API
+  List<BabyApiModel> babiesApi = [];
+  GrowthLogApiModel? _latestGrowth;
+  bool _loading = true;
+  String? _error;
 
-  // Mock growth records
-  List<GrowthRecord> growthRecords = [
-    GrowthRecord(id: 'g1', babyId: '1', date: DateTime.now().subtract(const Duration(days: 60)), weightKg: 11.0, heightCm: 84),
-    GrowthRecord(id: 'g2', babyId: '1', date: DateTime.now().subtract(const Duration(days: 30)), weightKg: 11.5, heightCm: 85),
-    GrowthRecord(id: 'g3', babyId: '1', date: DateTime.now(), weightKg: 12.0, heightCm: 86),
-  ];
-
-  // Mock milestones
+  // Mock milestones (UI demo) – data milestone belum ada di API schema
   late List<Milestone> milestones;
 
   // Mock nutrition
@@ -52,6 +43,39 @@ class _HomeScreenState extends State<HomeScreen> {
     milestones = milestones
         .map((m) => (m.month <= 24) ? m.copyWith(achieved: true, achievedAt: DateTime.now()) : m)
         .toList();
+    _fetchBabies();
+  }
+
+  Future<void> _fetchBabies() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final list = await BabyService().list();
+      babiesApi = list;
+      _loading = false;
+      setState(() {});
+      if (babiesApi.isNotEmpty) {
+        _fetchLatestGrowth(babiesApi.first.id);
+      }
+    } catch (e) {
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchLatestGrowth(String babyId) async {
+    try {
+      final list = await GrowthService().list(babyId);
+      if (list.isNotEmpty) {
+        list.sort((a, b) => a.date.compareTo(b.date));
+        _latestGrowth = list.last;
+        setState(() {});
+      }
+    } catch (_) {}
   }
 
   @override
@@ -73,20 +97,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: babies.isEmpty ? _buildEmptyState() : _buildDashboard(),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+              ? Center(child: Text('Gagal memuat: $_error'))
+              : (babiesApi.isEmpty ? _buildEmptyState() : _buildDashboard())),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.of(context).push(
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => const BabyFormScreen(),
             ),
           );
-          
-          if (result != null && result is Baby) {
-            setState(() {
-              babies.add(result);
-            });
-          }
+          _fetchBabies();
         },
         child: const Icon(Icons.add),
       ),
@@ -95,20 +118,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDashboard() {
     final theme = Theme.of(context);
-    final baby = babies.first;
+    final apiBaby = babiesApi.first;
+    context.read<SelectedBabyProvider>().setBaby(apiBaby.id);
+    final baby = Baby(
+      id: apiBaby.id,
+      name: apiBaby.name,
+      birthDate: DateTime.parse(apiBaby.birthDate),
+    );
 
-    // WHO status dari record terakhir atau dari field baby
-    final latest = growthRecords.isNotEmpty
-        ? growthRecords.last
-        : (baby.weight != null && baby.height != null
-            ? GrowthRecord(
-                id: 'latest',
-                babyId: baby.id,
-                date: DateTime.now(),
-                weightKg: baby.weight!,
-                heightCm: baby.height!,
-              )
-            : null);
+    // WHO status dari growth API (jika tersedia)
+    GrowthRecord? latest;
+    if (_latestGrowth != null) {
+      latest = GrowthRecord(
+        id: _latestGrowth!.id,
+        babyId: _latestGrowth!.babyId,
+        date: DateTime.tryParse(_latestGrowth!.date) ?? DateTime.now(),
+        weightKg: _latestGrowth!.weight,
+        heightCm: _latestGrowth!.height,
+      );
+    }
 
     final whoStatus = (latest != null)
         ? GrowthUtils.classifyByBmi(weightKg: latest.weightKg, heightCm: latest.heightCm)
@@ -133,18 +161,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(Icons.baby_changing_station, color: Colors.pink),
               ),
               title: Text(baby.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              subtitle: Text('${baby.ageString}${baby.gender != null ? ' • ${baby.gender == 'male' ? 'Laki-laki' : 'Perempuan'}' : ''}'),
+              subtitle: Text(baby.ageString),
               trailing: IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () async {
-                  final result = await Navigator.of(context).push(
+                  await Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => BabyFormScreen(baby: baby)),
                   );
-                  if (result != null && result is Baby) {
-                    setState(() {
-                      babies[0] = result;
-                    });
-                  }
+                  _fetchBabies();
                 },
               ),
             ),
@@ -402,17 +426,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () async {
-                final result = await Navigator.of(context).push(
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const BabyFormScreen(),
                   ),
                 );
-                
-                if (result != null && result is Baby) {
-                  setState(() {
-                    babies.add(result);
-                  });
-                }
+                _fetchBabies();
               },
               icon: const Icon(Icons.add),
               label: const Text('Tambah Bayi'),

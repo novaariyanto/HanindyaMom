@@ -8,6 +8,9 @@ import 'package:hanindyamom/screens/activities/feeding_form_screen.dart';
 import 'package:hanindyamom/screens/activities/diaper_form_screen.dart';
 import 'package:hanindyamom/screens/activities/sleep_form_screen.dart';
 import 'package:hanindyamom/screens/timeline/timeline_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:hanindyamom/providers/selected_baby_provider.dart';
+import 'package:hanindyamom/services/timeline_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Baby? baby;
@@ -19,80 +22,51 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Mock data untuk demo
-  List<Feeding> feedings = [];
-  List<Diaper> diapers = [];
-  List<Sleep> sleeps = [];
+  bool _loading = true;
+  String? _error;
+  int _feedingCount = 0;
+  int _diaperCount = 0;
+  int _sleepMinutes = 0;
+  List<ActivityData> _chartData = [];
 
   @override
-  void initState() {
-    super.initState();
-    _generateMockData();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchSummary();
   }
 
-  void _generateMockData() {
-    final now = DateTime.now();
-    final babyId = widget.baby?.id ?? '1';
+  Future<void> _fetchSummary() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId ?? widget.baby?.id;
+    if (babyId == null) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await DashboardService().summary(babyId, range: 'daily');
+      // Ekspektasi struktur fleksibel
+      final feeding = data['feeding_count'] ?? data['feeding'] ?? 0;
+      final diaper = data['diaper_count'] ?? data['diaper'] ?? 0;
+      final sleep = data['sleep_minutes'] ?? data['sleep'] ?? 0;
+      _feedingCount = feeding is int ? feeding : int.tryParse('$feeding') ?? 0;
+      _diaperCount = diaper is int ? diaper : int.tryParse('$diaper') ?? 0;
+      _sleepMinutes = sleep is int ? sleep : int.tryParse('$sleep') ?? 0;
 
-    // Mock feeding data
-    feedings = [
-      Feeding(
-        id: '1',
-        babyId: babyId,
-        type: FeedingType.breastLeft,
-        startTime: now.subtract(const Duration(hours: 2)),
-        durationMinutes: 15,
-      ),
-      Feeding(
-        id: '2',
-        babyId: babyId,
-        type: FeedingType.breastRight,
-        startTime: now.subtract(const Duration(hours: 5)),
-        durationMinutes: 20,
-      ),
-      Feeding(
-        id: '3',
-        babyId: babyId,
-        type: FeedingType.formula,
-        startTime: now.subtract(const Duration(hours: 8)),
-        durationMinutes: 10,
-        amount: 120,
-      ),
-    ];
+      final chart = (data['chart'] as List?) ?? [];
+      _chartData = chart.map((e) {
+        final day = e['day']?.toString() ?? '';
+        final f = (e['feeding'] as num?)?.toDouble() ?? 0.0;
+        final d = (e['diaper'] as num?)?.toDouble() ?? 0.0;
+        return ActivityData(day: day, feeding: f, diaper: d);
+      }).toList();
 
-    // Mock diaper data
-    diapers = [
-      Diaper(
-        id: '1',
-        babyId: babyId,
-        changeTime: now.subtract(const Duration(hours: 1)),
-        type: DiaperType.wet,
-      ),
-      Diaper(
-        id: '2',
-        babyId: babyId,
-        changeTime: now.subtract(const Duration(hours: 4)),
-        type: DiaperType.dirty,
-        color: DiaperColor.yellow,
-        texture: DiaperTexture.soft,
-      ),
-    ];
-
-    // Mock sleep data
-    sleeps = [
-      Sleep(
-        id: '1',
-        babyId: babyId,
-        startTime: now.subtract(const Duration(hours: 3)),
-        endTime: now.subtract(const Duration(hours: 1, minutes: 30)),
-      ),
-      Sleep(
-        id: '2',
-        babyId: babyId,
-        startTime: now.subtract(const Duration(hours: 8)),
-        endTime: now.subtract(const Duration(hours: 6)),
-      ),
-    ];
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -117,21 +91,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (baby != null) _buildBabyHeader(baby),
-            const SizedBox(height: 24),
-            _buildTodaysSummary(),
-            const SizedBox(height: 24),
-            _buildActivityChart(),
-            const SizedBox(height: 24),
-            _buildQuickActions(),
-          ],
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+              ? Center(child: Text('Gagal memuat: $_error'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (baby != null) _buildBabyHeader(baby),
+                      const SizedBox(height: 24),
+                      _buildTodaysSummary(),
+                      const SizedBox(height: 24),
+                      _buildActivityChart(),
+                      const SizedBox(height: 24),
+                      _buildQuickActions(),
+                    ],
+                  ),
+                )),
     );
   }
 
@@ -202,24 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTodaysSummary() {
     final theme = Theme.of(context);
-    final today = DateTime.now();
-    
-    // Filter data hari ini
-    final todayFeedings = feedings.where((f) => 
-        f.startTime.day == today.day && 
-        f.startTime.month == today.month && 
-        f.startTime.year == today.year).length;
-    
-    final todayDiapers = diapers.where((d) => 
-        d.changeTime.day == today.day && 
-        d.changeTime.month == today.month && 
-        d.changeTime.year == today.year).length;
-    
-    final todaySleep = sleeps.where((s) => 
-        s.startTime.day == today.day && 
-        s.startTime.month == today.month && 
-        s.startTime.year == today.year)
-        .fold<Duration>(Duration.zero, (total, sleep) => total + sleep.duration);
+    final totalSleep = Duration(minutes: _sleepMinutes);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,9 +198,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _buildSummaryCard(
                 icon: Icons.restaurant,
                 title: 'Feeding',
-                value: '$todayFeedings',
+                value: '$_feedingCount',
                 subtitle: 'kali',
                 color: Colors.blue,
+                onTap: () {
+                  Navigator.of(context).pushNamed('/feeding_list');
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -247,9 +211,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _buildSummaryCard(
                 icon: Icons.baby_changing_station,
                 title: 'Diaper',
-                value: '$todayDiapers',
+                value: '$_diaperCount',
                 subtitle: 'kali',
                 color: Colors.orange,
+                onTap: () {
+                  Navigator.of(context).pushNamed('/diaper_list');
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -257,9 +224,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _buildSummaryCard(
                 icon: Icons.bedtime,
                 title: 'Tidur',
-                value: '${todaySleep.inHours}j',
-                subtitle: '${todaySleep.inMinutes % 60}m',
+                value: '${totalSleep.inHours}j',
+                subtitle: '${totalSleep.inMinutes % 60}m',
                 color: Colors.purple,
+                onTap: () {
+                  Navigator.of(context).pushNamed('/sleep_list');
+                },
               ),
             ),
           ],
@@ -274,12 +244,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String value,
     required String subtitle,
     required Color color,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -314,8 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildActivityChart() {
     final theme = Theme.of(context);
     
-    // Data untuk chart (7 hari terakhir)
-    final chartData = _generateChartData();
+    final chartData = _chartData.isNotEmpty ? _chartData : _generateChartData();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

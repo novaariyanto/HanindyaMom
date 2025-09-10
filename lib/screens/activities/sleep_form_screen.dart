@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/sleep.dart';
+import 'package:hanindyamom/services/sleep_service.dart';
 
 class SleepFormScreen extends StatefulWidget {
   final String babyId;
@@ -160,30 +161,26 @@ class _SleepFormScreenState extends State<SleepFormScreen> {
     }
 
     setState(() => _isLoading = true);
-
-    // Simulasi save (dalam implementasi nyata akan save ke database/API)
-    await Future.delayed(const Duration(seconds: 1));
-
-    final sleep = Sleep(
-      id: isEditing 
-          ? widget.sleep!.id 
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      babyId: widget.babyId,
-      startTime: _startTime,
-      endTime: _endTime ?? DateTime.now(), // Use current time if still sleeping
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-    );
-
-    if (mounted) {
+    try {
+      final startIso = DateFormat('yyyy-MM-ddTHH:mm:ss').format(_startTime);
+      final endIso = DateFormat('yyyy-MM-ddTHH:mm:ss').format(_endTime ?? DateTime.now());
+      await SleepService().create(
+        babyId: widget.babyId,
+        startTime: startIso,
+        endTime: endIso,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pop(sleep);
-      
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing 
-              ? 'Data tidur berhasil diupdate' 
-              : 'Data tidur berhasil ditambahkan'),
-        ),
+        SnackBar(content: Text(isEditing ? 'Data tidur diperbarui' : 'Data tidur ditambahkan')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e')),
       );
     }
   }

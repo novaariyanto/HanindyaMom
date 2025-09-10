@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/auth/login_screen.dart';
+import 'package:hanindyamom/services/settings_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,6 +14,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoDetectTimezone = true;
   String _selectedUnit = 'ml'; // ml or oz
   String _selectedLanguage = 'id'; // id or en
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final s = await SettingsService().getSettings();
+      setState(() {
+        _selectedUnit = s.unit;
+        _notificationsEnabled = s.notifications;
+        // timezone dari API tidak otomatis detect di UI ini
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +53,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: SingleChildScrollView(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+              ? Center(child: Text('Gagal memuat: $_error'))
+              : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      )),
     );
   }
 
@@ -166,6 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() {
                 _autoDetectTimezone = value;
               });
+              _saveSettings();
             },
           ),
         ],
@@ -186,6 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() {
                 _notificationsEnabled = value;
               });
+              _saveSettings();
             },
           ),
           if (_notificationsEnabled) ...[
@@ -377,6 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _selectedUnit = value!;
                 });
+                _saveSettings();
                 Navigator.of(context).pop();
               },
             ),
@@ -388,6 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _selectedUnit = value!;
                 });
+                _saveSettings();
                 Navigator.of(context).pop();
               },
             ),
@@ -395,6 +433,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveSettings() async {
+    try {
+      await SettingsService().update(
+        timezone: 'Asia/Jakarta',
+        unit: _selectedUnit,
+        notifications: _notificationsEnabled,
+      );
+    } catch (_) {}
   }
 
   void _showDeleteDataDialog() {

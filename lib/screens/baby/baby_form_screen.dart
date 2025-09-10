@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/baby.dart';
+import 'package:hanindyamom/services/baby_service.dart';
 
 class BabyFormScreen extends StatefulWidget {
   final Baby? baby; // null untuk add, ada value untuk edit
@@ -140,26 +141,35 @@ class _BabyFormScreenState extends State<BabyFormScreen> {
     }
 
     setState(() => _isLoading = true);
-
-    // Simulasi save (dalam implementasi nyata akan save ke database/API)
-    await Future.delayed(const Duration(seconds: 1));
-
-    final baby = Baby(
-      id: isEditing ? widget.baby!.id : DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim(),
-      birthDate: _selectedDate!,
-      photoPath: _photoPath,
-      weight: _weightController.text.isNotEmpty 
-          ? double.tryParse(_weightController.text) 
-          : null,
-      height: _heightController.text.isNotEmpty 
-          ? double.tryParse(_heightController.text) 
-          : null,
-    );
-
-    if (mounted) {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      if (isEditing) {
+        await BabyService().update(
+          widget.baby!.id,
+          name: _nameController.text.trim(),
+          birthDate: dateStr,
+          photo: _photoPath,
+          birthWeight: _weightController.text.isNotEmpty ? double.tryParse(_weightController.text) : null,
+          birthHeight: _heightController.text.isNotEmpty ? double.tryParse(_heightController.text) : null,
+        );
+      } else {
+        await BabyService().create(
+          name: _nameController.text.trim(),
+          birthDate: dateStr,
+          photo: _photoPath,
+          birthWeight: _weightController.text.isNotEmpty ? double.tryParse(_weightController.text) : null,
+          birthHeight: _heightController.text.isNotEmpty ? double.tryParse(_heightController.text) : null,
+        );
+      }
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pop(baby);
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan: $e')),
+      );
     }
   }
 

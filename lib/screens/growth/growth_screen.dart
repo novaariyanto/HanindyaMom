@@ -3,6 +3,9 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/screens/growth/growth_form_screen.dart';
 import 'package:hanindyamom/models/growth.dart';
+import 'package:provider/provider.dart';
+import 'package:hanindyamom/providers/selected_baby_provider.dart';
+import 'package:hanindyamom/services/growth_service.dart';
 
 class GrowthScreen extends StatefulWidget {
   const GrowthScreen({super.key});
@@ -12,12 +15,43 @@ class GrowthScreen extends StatefulWidget {
 }
 
 class _GrowthScreenState extends State<GrowthScreen> {
-  // Mock data
-  List<GrowthRecord> records = [
-    GrowthRecord(id: 'g1', babyId: '1', date: DateTime.now().subtract(const Duration(days: 60)), weightKg: 7.0, heightCm: 65),
-    GrowthRecord(id: 'g2', babyId: '1', date: DateTime.now().subtract(const Duration(days: 30)), weightKg: 7.6, heightCm: 67),
-    GrowthRecord(id: 'g3', babyId: '1', date: DateTime.now(), weightKg: 8.2, heightCm: 69),
-  ];
+  List<GrowthRecord> records = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final apiList = await GrowthService().list(babyId);
+      records = apiList
+          .map((g) => GrowthRecord(
+                id: g.id,
+                babyId: g.babyId,
+                date: DateTime.tryParse(g.date) ?? DateTime.now(),
+                weightKg: g.weight,
+                heightCm: g.height,
+              ))
+          .toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _error = '$e';
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +59,23 @@ class _GrowthScreenState extends State<GrowthScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Growth Tracker')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildChartCard(),
-            const SizedBox(height: 16),
-            Text('Riwayat Pertumbuhan', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ...records.reversed.map((r) => _buildGrowthCard(r)).toList(),
-          ],
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+              ? Center(child: Text('Gagal memuat: $_error'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildChartCard(),
+                      const SizedBox(height: 16),
+                      Text('Riwayat Pertumbuhan', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      ...records.reversed.map((r) => _buildGrowthCard(r)).toList(),
+                    ],
+                  ),
+                )),
       floatingActionButton: FloatingActionButton(
         onPressed: _addRecord,
         child: const Icon(Icons.add),
@@ -122,10 +160,11 @@ class _GrowthScreenState extends State<GrowthScreen> {
   }
 
   Future<void> _addRecord() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const GrowthFormScreen(babyId: '1')),
+      MaterialPageRoute(builder: (_) => GrowthFormScreen(babyId: babyId)),
     );
-    // Note: pada implementasi data nyata, refresh records dari sumber data
-    setState(() {});
+    _fetch();
   }
 }
