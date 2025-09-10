@@ -18,8 +18,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = const [
     HomeScreen(),
     GrowthScreen(),
-    MilestoneScreen(),
     TimelineScreen(),
+    MilestoneScreen(),
     SettingsScreen(),
   ];
 
@@ -51,16 +51,17 @@ class _MainScreenState extends State<MainScreen> {
             activeIcon: Icon(Icons.insights),
             label: 'Growth',
           ),
+             BottomNavigationBarItem(
+            icon: Icon(Icons.timeline_outlined),
+            activeIcon: Icon(Icons.timeline),
+            label: 'Timeline',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.emoji_events_outlined),
             activeIcon: Icon(Icons.emoji_events),
             label: 'Milestone',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.timeline_outlined),
-            activeIcon: Icon(Icons.timeline),
-            label: 'Timeline',
-          ),
+       
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
             activeIcon: Icon(Icons.settings),
