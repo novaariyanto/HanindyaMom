@@ -18,11 +18,37 @@ class _GrowthScreenState extends State<GrowthScreen> {
   List<GrowthRecord> records = [];
   bool _loading = true;
   String? _error;
+  bool _didFetch = false;
+  SelectedBabyProvider? _babyProvider;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetch();
+    if (!_didFetch) {
+      _didFetch = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetch();
+      });
+    }
+    final provider = context.read<SelectedBabyProvider>();
+    if (_babyProvider != provider) {
+      _babyProvider?.removeListener(_onBabyChanged);
+      _babyProvider = provider;
+      _babyProvider?.addListener(_onBabyChanged);
+    }
+  }
+
+  void _onBabyChanged() {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId != null && mounted) {
+      _fetch();
+    }
+  }
+
+  @override
+  void dispose() {
+    _babyProvider?.removeListener(_onBabyChanged);
+    super.dispose();
   }
 
   Future<void> _fetch() async {

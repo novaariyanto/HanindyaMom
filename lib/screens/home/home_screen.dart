@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   GrowthLogApiModel? _latestGrowth;
   bool _loading = true;
   String? _error;
+  String? _selectedBabyId;
 
   // Mock milestones (UI demo) – data milestone belum ada di API schema
   late List<Milestone> milestones;
@@ -43,7 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
     milestones = milestones
         .map((m) => (m.month <= 24) ? m.copyWith(achieved: true, achievedAt: DateTime.now()) : m)
         .toList();
-    _fetchBabies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchBabies();
+    });
   }
 
   Future<void> _fetchBabies() async {
@@ -54,11 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final list = await BabyService().list();
       babiesApi = list;
+      // Tentukan pilihan anak aktif: gunakan pilihan user jika ada; jika tidak ada, gunakan anak terakhir sebagai default
+      if (babiesApi.isNotEmpty) {
+        final provider = context.read<SelectedBabyProvider>();
+        if (provider.babyId != null && babiesApi.any((b) => b.id == provider.babyId)) {
+          _selectedBabyId = provider.babyId;
+        } else {
+          _selectedBabyId = babiesApi.last.id; // default: anak terakhir ditambahkan
+          provider.setBaby(_selectedBabyId);
+        }
+        _fetchLatestGrowth(_selectedBabyId!);
+      }
       _loading = false;
       setState(() {});
-      if (babiesApi.isNotEmpty) {
-        _fetchLatestGrowth(babiesApi.first.id);
-      }
     } catch (e) {
       setState(() {
         _error = '$e';
@@ -118,8 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDashboard() {
     final theme = Theme.of(context);
-    final apiBaby = babiesApi.first;
-    context.read<SelectedBabyProvider>().setBaby(apiBaby.id);
+    // Tentukan bayi aktif dari state
+    final apiBaby = (babiesApi.firstWhere(
+      (b) => b.id == _selectedBabyId,
+      orElse: () => babiesApi.last,
+    ));
     final baby = Baby(
       id: apiBaby.id,
       name: apiBaby.name,
@@ -153,7 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header profil singkat
+          // Selector anak + Header profil singkat
+          _buildBabySelector(),
+          const SizedBox(height: 12),
           Card(
             child: ListTile(
               leading: CircleAvatar(
@@ -382,6 +398,34 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBabySelector() {
+    if (babiesApi.length <= 1) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: babiesApi.map((b) {
+          final selected = b.id == _selectedBabyId;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ChoiceChip(
+              label: Text(b.name),
+              selected: selected,
+              onSelected: (val) {
+                if (!val) return;
+                setState(() {
+                  _selectedBabyId = b.id;
+                });
+                context.read<SelectedBabyProvider>().setBaby(b.id);
+                _fetchLatestGrowth(b.id);
+              },
+            ),
+          );
+        }).toList(),
       ),
     );
   }

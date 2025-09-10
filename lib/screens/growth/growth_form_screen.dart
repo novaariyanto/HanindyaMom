@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:hanindyamom/models/growth.dart';
-import 'package:hanindyamom/repositories/timeline_repository.dart';
-import 'package:hanindyamom/models/timeline.dart' as tl;
+import 'package:hanindyamom/services/growth_service.dart';
 
 class GrowthFormScreen extends StatefulWidget {
   final String babyId;
@@ -49,37 +46,24 @@ class _GrowthFormScreenState extends State<GrowthFormScreen> {
     final head = _headController.text.isNotEmpty ? double.tryParse(_headController.text) : null;
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final record = GrowthRecord(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      babyId: widget.babyId,
-      date: _date,
-      weightKg: weight,
-      heightCm: height,
-      headCircumferenceCm: head,
-    );
-
-    // Push ke timeline
-    final repo = context.read<TimelineRepository>();
-
-    final status = GrowthUtils.classifyByBmi(weightKg: weight, heightCm: height);
-    final statusText = GrowthUtils.statusText(status);
-
-    repo.add(tl.TimelineActivity(
-      id: 'growth_${record.id}',
-      type: tl.ActivityType.growth,
-      time: DateTime(_date.year, _date.month, _date.day, DateTime.now().hour, DateTime.now().minute),
-      title: 'Growth Update',
-      subtitle: '${weight.toStringAsFixed(1)} kg • ${height.toStringAsFixed(0)} cm • $statusText',
-      icon: Icons.monitor_weight,
-      color: Colors.pink,
-    ));
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    Navigator.of(context).pop(record);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data pertumbuhan disimpan')));
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_date);
+      await GrowthService().create(
+        babyId: widget.babyId,
+        date: dateStr,
+        weight: weight,
+        height: height,
+        headCircumference: head,
+      );
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data pertumbuhan disimpan')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+    }
   }
 
   @override

@@ -11,6 +11,8 @@ import 'package:hanindyamom/screens/activities/feeding_form_screen.dart';
 import 'package:hanindyamom/screens/activities/diaper_form_screen.dart';
 import 'package:hanindyamom/screens/activities/sleep_form_screen.dart';
 import 'package:hanindyamom/screens/growth/growth_form_screen.dart';
+import 'package:hanindyamom/screens/nutrition/nutrition_form_screen.dart';
+import 'package:hanindyamom/screens/milestone/milestone_form_screen.dart';
 import 'package:hanindyamom/models/feeding.dart' as fm;
 import 'package:hanindyamom/models/diaper.dart' as dm;
 import 'package:hanindyamom/models/sleep.dart' as sm;
@@ -29,16 +31,54 @@ class _TimelineScreenState extends State<TimelineScreen> {
   List<TimelineActivity> activities = [];
   bool _loading = true;
   String? _error;
+  bool _didFetch = false;
+  SelectedBabyProvider? _babyProvider;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_didFetch) {
+      _didFetch = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchTimeline();
+      });
+    }
+    final provider = context.read<SelectedBabyProvider>();
+    if (_babyProvider != provider) {
+      _babyProvider?.removeListener(_onBabyChanged);
+      _babyProvider = provider;
+      _babyProvider?.addListener(_onBabyChanged);
+    }
+  }
+
+  void _onBabyChanged() {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (!mounted) return;
+    if (babyId == null) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
     _fetchTimeline();
+  }
+
+  @override
+  void dispose() {
+    _babyProvider?.removeListener(_onBabyChanged);
+    super.dispose();
   }
 
   Future<void> _fetchTimeline() async {
     final babyId = context.read<SelectedBabyProvider>().babyId;
-    if (babyId == null) return;
+    if (babyId == null) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -116,7 +156,83 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     ),
                   ],
                 )),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddMenu,
+        child: const Icon(Icons.add),
+      ),
     );
+  }
+
+  void _showAddMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(leading: const Icon(Icons.restaurant), title: const Text('Tambah Feeding'), onTap: () async { Navigator.pop(context); await _addFeeding(); }),
+            ListTile(leading: const Icon(Icons.baby_changing_station), title: const Text('Tambah Diaper'), onTap: () async { Navigator.pop(context); await _addDiaper(); }),
+            ListTile(leading: const Icon(Icons.bedtime), title: const Text('Tambah Tidur'), onTap: () async { Navigator.pop(context); await _addSleep(); }),
+            ListTile(leading: const Icon(Icons.monitor_weight), title: const Text('Tambah Growth'), onTap: () async { Navigator.pop(context); await _addGrowth(); }),
+            ListTile(leading: const Icon(Icons.emoji_events), title: const Text('Tambah Milestone'), onTap: () async { Navigator.pop(context); await _addMilestone(); }),
+            ListTile(leading: const Icon(Icons.restaurant_menu), title: const Text('Tambah Nutrisi'), onTap: () async { Navigator.pop(context); await _addNutrition(); }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addFeeding() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => FeedingFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
+  }
+
+  Future<void> _addDiaper() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DiaperFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
+  }
+
+  Future<void> _addSleep() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SleepFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
+  }
+
+  Future<void> _addGrowth() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => GrowthFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
+  }
+
+  Future<void> _addMilestone() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => MilestoneFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
+  }
+
+  Future<void> _addNutrition() async {
+    final babyId = context.read<SelectedBabyProvider>().babyId;
+    if (babyId == null) return;
+    final ok = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => NutritionFormScreen(babyId: babyId)),
+    );
+    if (ok == true) _fetchTimeline();
   }
 
   Widget _buildFilterChips() {
@@ -239,24 +355,27 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildTimeline() {
     final groupedActivities = _groupActivitiesByDate();
     
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: groupedActivities.length,
-      itemBuilder: (context, index) {
-        final entry = groupedActivities.entries.elementAt(index);
-        final date = entry.key;
-        final dayActivities = entry.value;
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDateHeader(date),
-            const SizedBox(height: 8),
-            ...dayActivities.map((activity) => _buildTimelineItem(activity)),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _fetchTimeline,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: groupedActivities.length,
+        itemBuilder: (context, index) {
+          final entry = groupedActivities.entries.elementAt(index);
+          final date = entry.key;
+          final dayActivities = entry.value;
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDateHeader(date),
+              const SizedBox(height: 8),
+              ...dayActivities.map((activity) => _buildTimelineItem(activity)),
+              const SizedBox(height: 16),
+            ],
+          );
+        },
+      ),
     );
   }
 

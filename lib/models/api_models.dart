@@ -10,8 +10,9 @@ class BabyApiModel {
   final String name;
   final String birthDate; // yyyy-mm-dd
   final String? photo;
-  final String? birthWeight;
-  final String? birthHeight;
+  final double? birthWeight;
+  final double? birthHeight;
+
   BabyApiModel({
     required this.id,
     required this.name,
@@ -20,14 +21,26 @@ class BabyApiModel {
     this.birthWeight,
     this.birthHeight,
   });
+
   factory BabyApiModel.fromJson(Map<String, dynamic> j) => BabyApiModel(
         id: j['id'] as String,
         name: j['name'] as String,
         birthDate: j['birth_date'] as String,
         photo: j['photo'] as String?,
-        birthWeight: (j['birth_weight'] as String),
-        birthHeight: (j['birth_height'] as String),
+        birthWeight: _toDouble(j['birth_weight']),
+        birthHeight: _toDouble(j['birth_height']),
       );
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  /// buat tampilan teks di UI
+  String get birthWeightText => birthWeight?.toString() ?? "-";
+  String get birthHeightText => birthHeight?.toString() ?? "-";
 }
 
 class FeedingLogApiModel {

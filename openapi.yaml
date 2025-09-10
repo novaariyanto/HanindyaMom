@@ -1,4 +1,4 @@
-openapi: 3.0.3
+setopenapi: 3.0.3
 info:
   title: HanindyaMom API v1
   version: 1.0.0

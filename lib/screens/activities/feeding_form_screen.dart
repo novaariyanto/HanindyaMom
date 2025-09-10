@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/feeding.dart';
 import 'package:hanindyamom/services/feeding_service.dart';
-import 'package:intl/intl.dart';
 
 class FeedingFormScreen extends StatefulWidget {
   final String babyId;

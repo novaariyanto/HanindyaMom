@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hanindyamom/services/api_client.dart';
+import 'package:hanindyamom/services/session_prefs.dart';
 
 class AuthService {
   final ApiClient api;
@@ -28,6 +29,7 @@ class AuthService {
     final token = data['data']?['token'] ?? data['token'] ?? data['access_token'];
     if (token is String && token.isNotEmpty) {
       await session.saveToken(token);
+      await SessionPrefs.saveToken(token);
     } else {
       throw Exception('Token tidak ditemukan pada response login');
     }
@@ -38,5 +40,6 @@ class AuthService {
       await api.dio.post('/auth/logout');
     } catch (_) {}
     await session.clear();
+    await SessionPrefs.clearToken();
   }
 }

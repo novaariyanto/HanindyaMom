@@ -7,6 +7,7 @@ class SelectedBabyProvider extends ChangeNotifier {
   bool get hasBaby => _babyId != null && _babyId!.isNotEmpty;
 
   void setBaby(String? id) {
+    if (_babyId == id) return;
     _babyId = id;
     notifyListeners();
   }

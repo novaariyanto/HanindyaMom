@@ -11,6 +11,8 @@ import 'package:hanindyamom/screens/feeding/feeding_list_screen.dart';
 import 'package:hanindyamom/screens/diaper/diaper_list_screen.dart';
 import 'package:hanindyamom/screens/sleep/sleep_list_screen.dart';
 import 'package:hanindyamom/screens/growth/growth_list_screen.dart';
+import 'package:hanindyamom/services/session_prefs.dart';
+import 'package:hanindyamom/screens/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +47,7 @@ class HanindyaMomApp extends StatelessWidget {
         title: 'HanindyaMom',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const LoginScreen(),
+        home: const _Bootstrapper(),
         routes: {
           '/login': (context) => const LoginScreen(),
           '/feeding_list': (context) => const FeedingListRouteGuard(),
@@ -64,6 +66,42 @@ class HanindyaMomApp extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _Bootstrapper extends StatefulWidget {
+  const _Bootstrapper({super.key});
+  @override
+  State<_Bootstrapper> createState() => _BootstrapperState();
+}
+
+class _BootstrapperState extends State<_Bootstrapper> {
+  String? _token;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final token = await SessionPrefs.getToken();
+    setState(() {
+      _token = token;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_token != null && _token!.isNotEmpty) {
+      return const MainScreen();
+    }
+    return const LoginScreen();
   }
 }
 

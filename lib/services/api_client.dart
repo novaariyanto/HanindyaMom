@@ -52,6 +52,7 @@ class ApiClient {
         'Accept': 'application/json',
       },
     ));
+    
     dio.interceptors.add(AuthInterceptor(sm));
     dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
     return ApiClient._internal(dio);
