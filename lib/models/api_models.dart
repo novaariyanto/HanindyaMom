@@ -189,3 +189,31 @@ class SettingsApiModel {
         notifications: j['notifications'] as bool,
       );
 }
+
+class UserProfileApiModel {
+  final String id;
+  final String name;
+  final String email;
+  final String? photo;
+
+  UserProfileApiModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.photo,
+  });
+
+  factory UserProfileApiModel.fromJson(Map<String, dynamic> j) => UserProfileApiModel(
+        id: (j['id'] ?? j['user_id']).toString(),
+        name: (j['name'] ?? '') as String,
+        email: (j['email'] ?? '') as String,
+        photo: j['photo'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        if (photo != null) 'photo': photo,
+      };
+}

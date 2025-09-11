@@ -7,6 +7,7 @@ import 'package:hanindyamom/services/feeding_service.dart';
 import 'package:hanindyamom/services/diaper_service.dart';
 import 'package:hanindyamom/services/sleep_service.dart';
 import 'package:hanindyamom/services/growth_service.dart';
+import 'package:hanindyamom/utils/validators.dart';
 import 'package:hanindyamom/screens/activities/feeding_form_screen.dart';
 import 'package:hanindyamom/screens/activities/diaper_form_screen.dart';
 import 'package:hanindyamom/screens/activities/sleep_form_screen.dart';
@@ -92,8 +93,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
         final title = e['title'] ?? e['name'] ?? typeStr.toUpperCase();
         final subtitle = e['subtitle'] ?? e['notes'] ?? '';
         final map = _mapType(typeStr);
+        final id =  e['id'] ?? e['id'] ?? '';
         return TimelineActivity(
-          id: (e['id']?.toString() ?? time.microsecondsSinceEpoch.toString()),
+          id: id,
           type: map.type,
           time: time,
           title: title,
@@ -540,6 +542,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
   void _editActivity(TimelineActivity activity) {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) return;
+    if (!Validators.isUuid(activity.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID aktivitas tidak valid untuk diedit')));
+      return;
+    }
     switch (activity.type) {
       case ActivityType.feeding:
         _editFeeding(activity.id, babyId);
@@ -590,6 +596,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   Future<void> _performDelete(TimelineActivity activity) async {
     try {
+      // Guard: pastikan id adalah UUID valid
+      if (!Validators.isUuid(activity.id)) {
+        throw Exception('ID tidak valid untuk operasi ini');
+      }
       switch (activity.type) {
         case ActivityType.feeding:
           await FeedingService().delete(activity.id);
@@ -841,5 +851,36 @@ _TypeMap _mapType(String t) {
       return _TypeMap(ActivityType.nutrition, Icons.restaurant_menu, Colors.green);
     default:
       return _TypeMap(ActivityType.feeding, Icons.info_outline, Colors.grey);
+  }
+}
+
+// Mencoba mengekstrak UUID dari payload timeline untuk berbagai tipe aktivitas
+String _extractId(Map<String, dynamic> e, String typeKey) {
+  // prioritas: id -> ${type}_id -> nested object id
+  String? id = (e['id'] ?? e['${typeKey}_id'])?.toString();
+  if (id != null && id.trim().isNotEmpty) return id.trim();
+  // beberapa backend mengemas objek nested, mis: feeding { id: ... }
+  final nested = e[typeKey];
+  if (nested is Map<String, dynamic>) {
+    final nestedId = nested['id']?.toString();
+    if (nestedId != null && nestedId.trim().isNotEmpty) return nestedId.trim();
+  }
+  return '';
+}
+
+String _typeKey(ActivityType t) {
+  switch (t) {
+    case ActivityType.feeding:
+      return 'feeding';
+    case ActivityType.diaper:
+      return 'diaper';
+    case ActivityType.sleep:
+      return 'sleep';
+    case ActivityType.growth:
+      return 'growth';
+    case ActivityType.milestone:
+      return 'milestone';
+    case ActivityType.nutrition:
+      return 'nutrition';
   }
 }

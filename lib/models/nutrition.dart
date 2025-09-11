@@ -14,6 +14,24 @@ class NutritionEntry {
     this.photoPath,
     this.notes,
   });
+
+  factory NutritionEntry.fromJson(Map<String, dynamic> j) => NutritionEntry(
+        id: (j['id'] ?? '').toString(),
+        babyId: j['baby_id'] as String,
+        time: DateTime.tryParse(j['time'] as String) ?? DateTime.now(),
+        title: j['title'] as String,
+        photoPath: (j['photo_path'] ?? j['photo']) as String?,
+        notes: j['notes'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'baby_id': babyId,
+        'time': time.toIso8601String(),
+        'title': title,
+        if (photoPath != null) 'photo_path': photoPath,
+        if (notes != null) 'notes': notes,
+      };
 }
 
 class NutritionRecommendations {

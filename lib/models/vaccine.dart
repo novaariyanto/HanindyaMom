@@ -25,3 +25,39 @@ class VaccineScheduleIDAI {
     ];
   }
 }
+
+class VaccineEntry {
+  final String id;
+  final String babyId;
+  final String vaccineName;
+  final String scheduleDate; // YYYY-MM-DD
+  final String status; // 'scheduled' | 'done'
+  final String? notes;
+
+  VaccineEntry({
+    required this.id,
+    required this.babyId,
+    required this.vaccineName,
+    required this.scheduleDate,
+    required this.status,
+    this.notes,
+  });
+
+  factory VaccineEntry.fromJson(Map<String, dynamic> j) => VaccineEntry(
+        id: (j['id'] ?? '').toString(),
+        babyId: j['baby_id'] as String,
+        vaccineName: j['vaccine_name'] as String,
+        scheduleDate: j['schedule_date'] as String,
+        status: j['status'] as String,
+        notes: j['notes'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'baby_id': babyId,
+        'vaccine_name': vaccineName,
+        'schedule_date': scheduleDate,
+        'status': status,
+        if (notes != null) 'notes': notes,
+      };
+}

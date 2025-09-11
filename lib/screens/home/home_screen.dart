@@ -6,6 +6,7 @@ import 'package:hanindyamom/models/nutrition.dart';
 import 'package:hanindyamom/models/api_models.dart';
 import 'package:hanindyamom/services/baby_service.dart';
 import 'package:hanindyamom/services/growth_service.dart';
+import 'package:hanindyamom/services/milestones_service.dart';
 import 'package:hanindyamom/screens/baby/baby_form_screen.dart';
 import 'package:hanindyamom/screens/growth/growth_screen.dart';
 import 'package:hanindyamom/screens/milestone/milestone_screen.dart';
@@ -30,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _error;
   String? _selectedBabyId;
 
-  // Mock milestones (UI demo) – data milestone belum ada di API schema
-  late List<Milestone> milestones;
+  // Milestones dari API
+  List<Milestone> _milestones = [];
 
   // Mock nutrition
   List<NutritionEntry> nutritionEntries = [];
@@ -39,11 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    milestones = MilestoneTemplates.generateForBaby('1');
-    // Tandai beberapa tercapai
-    milestones = milestones
-        .map((m) => (m.month <= 24) ? m.copyWith(achieved: true, achievedAt: DateTime.now()) : m)
-        .toList();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchBabies();
     });
@@ -67,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
           provider.setBaby(_selectedBabyId);
         }
         _fetchLatestGrowth(_selectedBabyId!);
+        _fetchMilestones(_selectedBabyId!);
       }
       _loading = false;
       setState(() {});
@@ -86,6 +83,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _latestGrowth = list.last;
         setState(() {});
       }
+    } catch (_) {}
+  }
+
+  Future<void> _fetchMilestones(String babyId) async {
+    try {
+      // gunakan service milestones API
+      final list = await MilestonesService().list(babyId);
+      setState(() => _milestones = list);
     } catch (_) {}
   }
 
@@ -156,8 +161,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ? GrowthUtils.classifyByBmi(weightKg: latest.weightKg, heightCm: latest.heightCm)
         : null;
 
-    final totalMilestone = milestones.length;
-    final achievedMilestone = milestones.where((m) => m.achieved).length;
+    final totalMilestone = _milestones.length;
+    final achievedMilestone = _milestones.where((m) => m.achieved).length;
     final milestoneProgress = totalMilestone == 0 ? 0.0 : achievedMilestone / totalMilestone;
 
     final recs = NutritionRecommendations.forAgeMonths(baby.ageInMonths);
@@ -422,6 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
                 context.read<SelectedBabyProvider>().setBaby(b.id);
                 _fetchLatestGrowth(b.id);
+                _fetchMilestones(b.id);
               },
             ),
           );

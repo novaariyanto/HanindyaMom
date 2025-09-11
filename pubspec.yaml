@@ -43,6 +43,7 @@ dependencies:
   # Image picker untuk upload foto
   image_picker: ^1.0.4
   
+  
   # State management
   provider: ^6.1.1
   

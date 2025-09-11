@@ -29,6 +29,26 @@ class Milestone {
         achieved: achieved ?? this.achieved,
         achievedAt: achievedAt ?? this.achievedAt,
       );
+
+  factory Milestone.fromJson(Map<String, dynamic> j) => Milestone(
+        id: (j['id'] ?? '').toString(),
+        babyId: j['baby_id'] as String,
+        month: (j['month'] as num).toInt(),
+        title: j['title'] as String,
+        description: (j['description'] ?? '') as String,
+        achieved: (j['achieved'] ?? false) as bool,
+        achievedAt: j['achieved_at'] != null ? DateTime.tryParse(j['achieved_at']) : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'baby_id': babyId,
+        'month': month,
+        'title': title,
+        'description': description,
+        'achieved': achieved,
+        if (achievedAt != null) 'achieved_at': achievedAt!.toIso8601String(),
+      };
 }
 
 class MilestoneTemplates {

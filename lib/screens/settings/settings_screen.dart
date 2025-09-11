@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/auth/login_screen.dart';
+import 'package:hanindyamom/screens/settings/edit_profile_screen.dart';
+import 'package:hanindyamom/screens/settings/privacy_policy_screen.dart';
+import 'package:hanindyamom/screens/settings/terms_screen.dart';
+import 'package:hanindyamom/screens/settings/support_screen.dart';
+import 'package:hanindyamom/services/profile_service.dart';
 import 'package:hanindyamom/services/settings_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -16,11 +21,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedLanguage = 'id'; // id or en
   bool _loading = true;
   String? _error;
+  String _profileName = '';
+  String _profileEmail = '';
+  String? _profilePhoto;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadProfile();
   }
 
   Future<void> _loadSettings() async {
@@ -42,6 +51,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final p = await ProfileService().getProfile();
+      if (!mounted) return;
+      setState(() {
+        _profileName = p.name;
+        _profileEmail = p.email;
+        _profilePhoto = p.photo;
+      });
+    } catch (_) {}
   }
 
   @override
@@ -112,32 +133,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Icon(
-                Icons.person,
-                color: theme.colorScheme.primary,
-                size: 30,
-              ),
-            ),
+            _buildProfileAvatar(theme),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ibu Sari',
+                    _profileName.isEmpty ? '—' : _profileName,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    'sari@example.com',
+                    _profileEmail.isEmpty ? '—' : _profileEmail,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
@@ -147,15 +156,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fitur edit profil belum tersedia')),
+              onPressed: () async {
+                final updated = await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                 );
+                if (updated == true) {
+                  _loadProfile();
+                }
               },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileAvatar(ThemeData theme) {
+    final url = ProfileService.buildPhotoUrl(_profilePhoto);
+    ImageProvider? image;
+    if (url != null && url.isNotEmpty) {
+      image = NetworkImage(url);
+    }
+    return CircleAvatar(
+      radius: 30,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+      backgroundImage: image,
+      child: image == null ? Icon(Icons.person, color: theme.colorScheme.primary, size: 30) : null,
     );
   }
 
@@ -314,9 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Kebijakan Privasi'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur kebijakan privasi belum tersedia')),
-              );
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
             },
           ),
           const Divider(height: 1),
@@ -325,9 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Syarat & Ketentuan'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur syarat & ketentuan belum tersedia')),
-              );
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsScreen()));
             },
           ),
           const Divider(height: 1),
@@ -336,9 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Bantuan & Dukungan'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur bantuan belum tersedia')),
-              );
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
             },
           ),
         ],
