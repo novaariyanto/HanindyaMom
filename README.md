@@ -6,7 +6,8 @@ Aplikasi mobile terbaik untuk memantau perkembangan dan aktivitas bayi, dirancan
 
 ## 🔗 Links
 
-- 📲 **Internal Testing (Google Play):** [Join as Internal Tester](https://play.google.com/apps/testing/id.whatsva.hanindyamom)  
+- 📲 **Internal Testing (Google Play):** [Join as Internal Tester](https://play.google.com/apps/internaltest/470148419232691802)  
+
 - 🛠️ **Admin Panel Demo:** [https://hanindyamom.whatsva.id/](https://hanindyamom.whatsva.id/)  
 
 ---
