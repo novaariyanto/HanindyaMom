@@ -65,3 +65,26 @@ Aplikasi mobile terbaik untuk memantau perkembangan dan aktivitas bayi, dirancan
 - Notifikasi pengingat
 - Backup dan export data
 - Kebijakan privasi & bantuan
+
+## 🔮 Roadmap
+
+- [ ] Integrasi backend API
+- [ ] Sinkronisasi cloud
+- [ ] Notifikasi push
+- [ ] Export data ke PDF
+- [ ] Grafik pertumbuhan bayi
+- [ ] Milestone perkembangan
+- [ ] Konsultasi dengan dokter
+- [ ] Komunitas ibu
+
+## 🤝 Kontribusi
+
+Kontribusi sangat diterima! Silakan buat issue atau pull request.
+
+## 📄 Lisensi
+
+MIT License - lihat file [LICENSE](LICENSE) untuk detail.
+
+---
+
+**Dibuat dengan ❤️ untuk ibu-ibu Indonesia**
