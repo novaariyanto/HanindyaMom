@@ -15,6 +15,7 @@ import 'package:hanindyamom/screens/tips/activity_tips_screen.dart';
 import 'package:hanindyamom/screens/vaccine/vaccine_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hanindyamom/providers/selected_baby_provider.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,17 +98,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text('HanindyaMom'),
+        title: Text(loc.tr('app.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur notifikasi belum tersedia')),
+                SnackBar(content: Text(loc.tr('common.feature_not_available'))),
               );
             },
           ),
@@ -116,8 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null
-              ? Center(child: Text('Gagal memuat: $_error'))
-              : (babiesApi.isEmpty ? _buildEmptyState() : _buildDashboard())),
+              ? Center(child: Text(loc.tr('common.load_failed', {'error': '$_error'})))
+              : (babiesApi.isEmpty ? _buildEmptyState(loc) : _buildDashboard(loc))),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(
@@ -132,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDashboard() {
+  Widget _buildDashboard(AppLocalizations loc) {
     final theme = Theme.of(context);
     // Tentukan bayi aktif dari state
     final apiBaby = (babiesApi.firstWhere(
@@ -217,12 +219,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Status WHO (Terakhir)', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(loc.tr('home.who.title'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Text(
                           latest != null
                               ? '${latest.weightKg.toStringAsFixed(1)} kg • ${latest.heightCm.toStringAsFixed(0)} cm'
-                              : 'Belum ada data',
+                              : loc.tr('home.who.no_data'),
                         ),
                         if (whoStatus != null)
                           Text(
@@ -245,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(builder: (_) => const GrowthScreen()),
                       );
                     },
-                    child: const Text('Detail'),
+                    child: Text(loc.tr('common.detail')),
                   ),
                 ],
               ),
@@ -277,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Milestone Progress', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                            Text(loc.tr('home.milestone.title'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 8),
                             LinearProgressIndicator(value: milestoneProgress, backgroundColor: Colors.grey.shade200),
                             const SizedBox(height: 8),
@@ -291,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(builder: (_) => const MilestoneScreen()),
                           );
                         },
-                        child: const Text('Lihat'),
+                        child: Text(loc.tr('common.view')),
                       ),
                     ],
                   ),
@@ -322,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text('Rekomendasi Nutrisi', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                        child: Text(loc.tr('home.nutrition.title'), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                       ),
                       TextButton(
                         onPressed: () async {
@@ -330,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(builder: (_) => NutritionFormScreen(babyId: baby.id)),
                           );
                         },
-                        child: const Text('Catat Menu'),
+                        child: Text(loc.tr('home.nutrition.add_menu')),
                       ),
                     ],
                   ),
@@ -367,10 +369,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        children: const [
-                          Icon(Icons.vaccines, color: Colors.blue),
-                          SizedBox(height: 8),
-                          Text('Jadwal Vaksin', textAlign: TextAlign.center),
+                        children: [
+                          const Icon(Icons.vaccines, color: Colors.blue),
+                          const SizedBox(height: 8),
+                          Text(loc.tr('vaccine.title'), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
@@ -390,10 +392,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        children: const [
-                          Icon(Icons.lightbulb, color: Colors.purple),
-                          SizedBox(height: 8),
-                          Text('Activity Tips', textAlign: TextAlign.center),
+                        children: [
+                          const Icon(Icons.lightbulb, color: Colors.purple),
+                          const SizedBox(height: 8),
+                          Text(loc.tr('tips.title'), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
@@ -436,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations loc) {
     final theme = Theme.of(context);
     
     return Center(
@@ -460,14 +462,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Belum ada profil bayi',
+              loc.tr('home.no_baby_title'),
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Tambahkan profil bayi pertama Anda untuk mulai memantau perkembangannya',
+              loc.tr('home.no_baby_subtitle'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onBackground.withOpacity(0.7),
               ),
@@ -484,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _fetchBabies();
               },
               icon: const Icon(Icons.add),
-              label: const Text('Tambah Bayi'),
+              label: Text(loc.tr('home.add_baby')),
             ),
           ],
         ),

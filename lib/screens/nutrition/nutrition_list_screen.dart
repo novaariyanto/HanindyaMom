@@ -7,6 +7,7 @@ import 'package:hanindyamom/models/nutrition.dart';
 import 'package:hanindyamom/providers/selected_baby_provider.dart';
 import 'package:hanindyamom/services/nutrition_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class NutritionListScreen extends StatefulWidget {
   const NutritionListScreen({super.key});
@@ -49,12 +50,12 @@ class _NutritionListScreenState extends State<NutritionListScreen> {
   Future<void> _delete(NutritionEntry n) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Hapus Menu'),
-        content: Text('Hapus "${n.title}"?'),
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(ctx).tr('nutrition.delete_title')),
+        content: Text(AppLocalizations.of(ctx).tr('nutrition.delete_confirm', {'title': n.title})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Hapus')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx).tr('common.cancel'))),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(ctx).tr('common.delete'))),
         ],
       ),
     );
@@ -63,7 +64,7 @@ class _NutritionListScreenState extends State<NutritionListScreen> {
       await NutritionService().delete(n.id);
       setState(() => items.removeWhere((x) => x.id == n.id));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.delete_failed', {'error': '$e'}))));
     }
   }
 
@@ -96,36 +97,37 @@ class _NutritionListScreenState extends State<NutritionListScreen> {
     } on DioException catch (e) {
       final msg = e.response?.data is Map<String, dynamic> ? (e.response?.data['message'] ?? e.message) : e.message;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $msg')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$msg'}))));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$e'}))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Menu Harian')),
+      appBar: AppBar(title: Text(loc.tr('nutrition.title'))),
       floatingActionButton: FloatingActionButton(onPressed: () => _createOrEdit(), child: const Icon(Icons.add)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null
-              ? Center(child: Text('Gagal memuat: $_error'))
+              ? Center(child: Text(loc.tr('common.load_failed', {'error': '$_error'})))
               : RefreshIndicator(
                   onRefresh: _fetch,
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16.0),
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemCount: items.length,
-                    itemBuilder: (_, i) => _buildItem(items[i], theme),
+                    itemBuilder: (_, i) => _buildItem(context, items[i], theme),
                   ),
                 )),
     );
   }
 
-  Widget _buildItem(NutritionEntry n, ThemeData theme) {
+  Widget _buildItem(BuildContext context, NutritionEntry n, ThemeData theme) {
     ImageProvider? image;
     if (n.photoPath != null && n.photoPath!.isNotEmpty) {
       final url = NutritionService.buildPhotoUrl(n.photoPath);
@@ -138,15 +140,15 @@ class _NutritionListScreenState extends State<NutritionListScreen> {
           child: image == null ? const Icon(Icons.restaurant_menu) : null,
         ),
         title: Text(n.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Text(DateFormat('dd MMM yyyy • HH:mm', 'id_ID').format(n.time)),
+        subtitle: Text(DateFormat('dd MMM yyyy • HH:mm', AppLocalizations.of(context).dateLocaleTag).format(n.time)),
         trailing: PopupMenuButton<String>(
           onSelected: (v) {
             if (v == 'edit') _createOrEdit(initial: n);
             if (v == 'delete') _delete(n);
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'edit', child: Text('Edit')),
-            PopupMenuItem(value: 'delete', child: Text('Hapus')),
+          itemBuilder: (ctx) => [
+            PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(ctx).tr('common.edit'))),
+            PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(ctx).tr('common.delete'))),
           ],
         ),
       ),
@@ -192,8 +194,9 @@ class _NutritionDialogState extends State<_NutritionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Tambah Menu' : 'Edit Menu'),
+      title: Text(widget.initial == null ? loc.tr('nutrition.dialog_title_add') : loc.tr('nutrition.dialog_title_edit')),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -202,19 +205,19 @@ class _NutritionDialogState extends State<_NutritionDialog> {
             children: [
               TextFormField(
                 controller: _titleCtrl,
-                decoration: const InputDecoration(labelText: 'Judul Menu'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
+                decoration: InputDecoration(labelText: loc.tr('nutrition.menu_title')),
+                validator: (v) => v == null || v.trim().isEmpty ? loc.tr('nutrition.required') : null,
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+                decoration: InputDecoration(labelText: loc.tr('nutrition.notes_optional')),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: Text(DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(_time))),
+                  Expanded(child: Text(DateFormat('dd MMM yyyy, HH:mm', loc.dateLocaleTag).format(_time))),
                   TextButton.icon(
                     onPressed: () async {
                       final d = await showDatePicker(context: context, initialDate: _time, firstDate: DateTime.now().subtract(const Duration(days: 7)), lastDate: DateTime.now());
@@ -224,14 +227,14 @@ class _NutritionDialogState extends State<_NutritionDialog> {
                       setState(() => _time = DateTime(d.year, d.month, d.day, t.hour, t.minute));
                     },
                     icon: const Icon(Icons.event),
-                    label: const Text('Pilih Waktu'),
+                    label: Text(loc.tr('nutrition.pick_time')),
                   ),
                 ],
               ),
               const Divider(),
               TextFormField(
                 controller: _photoUrlCtrl,
-                decoration: const InputDecoration(labelText: 'URL Foto (opsional)'),
+                decoration: InputDecoration(labelText: loc.tr('nutrition.photo_url_optional')),
               ),
               const SizedBox(height: 6),
               Row(
@@ -245,19 +248,19 @@ class _NutritionDialogState extends State<_NutritionDialog> {
                       final size = await f.length();
                       if (size > 2 * 1024 * 1024) {
                         if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ukuran foto melebihi 2MB')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.tr('image.too_large_2mb'))));
                         return;
                       }
                       final lower = x.name.toLowerCase();
                       if (!(lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png'))){
                         if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format gambar harus JPG/PNG')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.tr('image.invalid_format'))));
                         return;
                       }
                       setState(() => _file = f);
                     },
                     icon: const Icon(Icons.photo),
-                    label: const Text('Pilih Foto'),
+                    label: Text(loc.tr('nutrition.pick_photo')),
                   ),
                   const SizedBox(width: 8),
                   if (_file != null) const Icon(Icons.check_circle, color: Colors.green),
@@ -268,7 +271,7 @@ class _NutritionDialogState extends State<_NutritionDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.tr('common.cancel'))),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -281,7 +284,7 @@ class _NutritionDialogState extends State<_NutritionDialog> {
             );
             Navigator.pop(context, payload);
           },
-          child: const Text('Simpan'),
+          child: Text(loc.tr('common.save')),
         ),
       ],
     );

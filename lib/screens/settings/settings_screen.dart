@@ -6,6 +6,9 @@ import 'package:hanindyamom/screens/settings/terms_screen.dart';
 import 'package:hanindyamom/screens/settings/support_screen.dart';
 import 'package:hanindyamom/services/profile_service.dart';
 import 'package:hanindyamom/services/settings_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
+import 'package:hanindyamom/providers/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,7 +21,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _autoDetectTimezone = true;
   String _selectedUnit = 'ml'; // ml or oz
-  String _selectedLanguage = 'id'; // id or en
   bool _loading = true;
   String? _error;
   String _profileName = '';
@@ -72,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(context.tr('settings.title')),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -88,28 +90,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
             
             // App Settings
-            _buildSectionTitle('Pengaturan Aplikasi'),
+            _buildSectionTitle(context.tr('settings.appSettings')),
             const SizedBox(height: 12),
             _buildAppSettings(),
             
             const SizedBox(height: 24),
             
             // Notifications
-            _buildSectionTitle('Notifikasi'),
+            _buildSectionTitle(context.tr('settings.notifications')),
             const SizedBox(height: 12),
             _buildNotificationSettings(),
             
             const SizedBox(height: 24),
             
             // Data & Privacy
-            _buildSectionTitle('Data & Privasi'),
+            _buildSectionTitle(context.tr('settings.dataPrivacy')),
             const SizedBox(height: 12),
             _buildDataSettings(),
             
             const SizedBox(height: 24),
             
             // About
-            _buildSectionTitle('Tentang'),
+            _buildSectionTitle(context.tr('settings.about')),
             const SizedBox(height: 12),
             _buildAboutSection(),
             
@@ -198,29 +200,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAppSettings() {
+    final currentLangCode = (context.watch<LocaleProvider>().locale?.languageCode) ?? Localizations.localeOf(context).languageCode;
     return Card(
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.language),
-            title: const Text('Bahasa'),
-            subtitle: Text(_selectedLanguage == 'id' ? 'Indonesia' : 'English'),
+            title: Text(context.tr('settings.language')),
+            subtitle: Text((currentLangCode == 'id') ? context.tr('settings.language.id') : context.tr('settings.language.en')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: _showLanguageDialog,
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.straighten),
-            title: const Text('Unit Pengukuran'),
-            subtitle: Text(_selectedUnit == 'ml' ? 'Mililiter (ml)' : 'Ounce (oz)'),
+            title: Text(context.tr('settings.measurementUnit')),
+            subtitle: Text(_selectedUnit == 'ml' ? context.tr('settings.unit.ml') : context.tr('settings.unit.oz')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: _showUnitDialog,
           ),
           const Divider(height: 1),
           SwitchListTile(
             secondary: const Icon(Icons.access_time),
-            title: const Text('Auto-detect Timezone'),
-            subtitle: const Text('Otomatis mendeteksi zona waktu'),
+            title: Text(context.tr('settings.autoTimezone.title')),
+            subtitle: Text(context.tr('settings.autoTimezone.subtitle')),
             value: _autoDetectTimezone,
             onChanged: (value) {
               setState(() {
@@ -240,8 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           SwitchListTile(
             secondary: const Icon(Icons.notifications),
-            title: const Text('Notifikasi'),
-            subtitle: const Text('Aktifkan notifikasi pengingat'),
+            title: Text(context.tr('settings.notifications.title')),
+            subtitle: Text(context.tr('settings.notifications.subtitle')),
             value: _notificationsEnabled,
             onChanged: (value) {
               setState(() {
@@ -254,24 +257,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.schedule),
-              title: const Text('Pengingat Feeding'),
-              subtitle: const Text('Setiap 3 jam'),
+              title: Text(context.tr('settings.reminder.feeding.title')),
+              subtitle: Text(context.tr('settings.reminder.feeding.subtitle')),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fitur pengaturan pengingat belum tersedia')),
+                  SnackBar(content: Text(context.tr('common.feature_not_available'))),
                 );
               },
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.baby_changing_station),
-              title: const Text('Pengingat Diaper'),
-              subtitle: const Text('Setiap 4 jam'),
+              title: Text(context.tr('settings.reminder.diaper.title')),
+              subtitle: Text(context.tr('settings.reminder.diaper.subtitle')),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fitur pengaturan pengingat belum tersedia')),
+                  SnackBar(content: Text(context.tr('common.feature_not_available'))),
                 );
               },
             ),
@@ -287,32 +290,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           ListTile(
             leading: const Icon(Icons.backup),
-            title: const Text('Backup Data'),
-            subtitle: const Text('Cadangkan data ke cloud'),
+            title: Text(context.tr('settings.backup.title')),
+            subtitle: Text(context.tr('settings.backup.subtitle')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur backup belum tersedia')),
+                SnackBar(content: Text(context.tr('common.feature_not_available'))),
               );
             },
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('Export Data'),
-            subtitle: const Text('Download data dalam format CSV'),
+            title: Text(context.tr('settings.export.title')),
+            subtitle: Text(context.tr('settings.export.subtitle')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur export belum tersedia')),
+                SnackBar(content: Text(context.tr('common.feature_not_available'))),
               );
             },
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Hapus Semua Data', style: TextStyle(color: Colors.red)),
-            subtitle: const Text('Hapus semua data secara permanen'),
+            title: Text(context.tr('settings.delete.title'), style: const TextStyle(color: Colors.red)),
+            subtitle: Text(context.tr('settings.delete.subtitle')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
             onTap: _showDeleteDataDialog,
           ),
@@ -327,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           ListTile(
             leading: const Icon(Icons.info),
-            title: const Text('Versi Aplikasi'),
+            title: Text(context.tr('about.version')),
             subtitle: const Text('1.0.0'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
@@ -337,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.privacy_tip),
-            title: const Text('Kebijakan Privasi'),
+            title: Text(context.tr('about.privacy_policy')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
@@ -346,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.description),
-            title: const Text('Syarat & Ketentuan'),
+            title: Text(context.tr('about.terms')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsScreen()));
@@ -355,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.help),
-            title: const Text('Bantuan & Dukungan'),
+            title: Text(context.tr('about.support')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
@@ -373,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: OutlinedButton.icon(
         onPressed: _showLogoutDialog,
         icon: const Icon(Icons.logout, color: Colors.red),
-        label: const Text('Keluar', style: TextStyle(color: Colors.red)),
+        label: Text(context.tr('settings.logout'), style: const TextStyle(color: Colors.red)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Colors.red),
         ),
@@ -385,29 +388,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pilih Bahasa'),
+        title: Text(context.tr('settings.language')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             RadioListTile<String>(
-              title: const Text('Indonesia'),
+              title: Text(context.tr('settings.language.id')),
               value: 'id',
-              groupValue: _selectedLanguage,
+              groupValue: (context.read<LocaleProvider>().locale?.languageCode) ?? Localizations.localeOf(context).languageCode,
               onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
-                });
+                context.read<LocaleProvider>().setLocale('id');
                 Navigator.of(context).pop();
               },
             ),
             RadioListTile<String>(
-              title: const Text('English'),
+              title: Text(context.tr('settings.language.en')),
               value: 'en',
-              groupValue: _selectedLanguage,
+              groupValue: (context.read<LocaleProvider>().locale?.languageCode) ?? Localizations.localeOf(context).languageCode,
               onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
-                });
+                context.read<LocaleProvider>().setLocale('en');
                 Navigator.of(context).pop();
               },
             ),
@@ -469,28 +468,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Semua Data'),
-        content: const Text(
-          'Apakah Anda yakin ingin menghapus semua data? '
-          'Tindakan ini tidak dapat dibatalkan.',
-        ),
+        title: Text(context.tr('settings.delete.confirmTitle')),
+        content: Text(context.tr('settings.delete.confirmText')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+            child: Text(context.tr('common.cancel')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur hapus data belum tersedia')),
+                SnackBar(content: Text(context.tr('common.feature_not_available'))),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Hapus'),
+            child: Text(context.tr('common.delete')),
           ),
         ],
       ),
@@ -501,12 +497,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Keluar'),
-        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        title: Text(context.tr('settings.logout.confirmTitle')),
+        content: Text(context.tr('settings.logout.confirmText')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+            child: Text(context.tr('common.cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -520,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Keluar'),
+            child: Text(context.tr('settings.logout')),
           ),
         ],
       ),
@@ -530,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showAboutDialog() {
     showAboutDialog(
       context: context,
-      applicationName: 'HanindyaMom',
+      applicationName: context.tr('app.title'),
       applicationVersion: '1.0.0',
       applicationIcon: Container(
         width: 60,
@@ -546,11 +542,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       children: [
-        const Text(
-          'HanindyaMom adalah aplikasi terbaik untuk memantau '
-          'perkembangan dan aktivitas bayi Anda.\n\n'
-          'Dibuat dengan ❤️ untuk ibu-ibu Indonesia.',
-        ),
+        Text(context.tr('about.description')),
       ],
     );
   }

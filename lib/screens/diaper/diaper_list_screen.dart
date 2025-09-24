@@ -6,6 +6,7 @@ import 'package:hanindyamom/services/diaper_service.dart';
 import 'package:hanindyamom/models/api_models.dart';
 import 'package:hanindyamom/screens/activities/diaper_form_screen.dart';
 import 'package:hanindyamom/models/diaper.dart' as ui;
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class DiaperListScreen extends StatefulWidget {
   const DiaperListScreen({super.key});
@@ -87,7 +88,7 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
     } catch (e) {
       setState(() => _loadingMore = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat halaman: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.load_failed', {'error': '$e'}))));
       }
     }
   }
@@ -106,19 +107,20 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Diaper')),
+      appBar: AppBar(title: Text(loc.tr('diaper.title'))),
       body: Column(
         children: [
-          _buildSearchBar(theme),
+          _buildSearchBar(theme, loc),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : (_error != null
-                    ? _buildErrorState()
+                    ? _buildErrorState(loc)
                     : RefreshIndicator(
                         onRefresh: _refresh,
-                        child: _items.isEmpty ? _buildEmptyState(theme) : _buildList(theme),
+                        child: _items.isEmpty ? _buildEmptyState(theme, loc) : _buildList(theme, loc),
                       )),
           ),
         ],
@@ -130,7 +132,7 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme) {
+  Widget _buildSearchBar(ThemeData theme, AppLocalizations loc) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -138,21 +140,21 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Cari jenis/catatan...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: loc.tr('common.search_hint'),
+                prefixIcon: const Icon(Icons.search),
               ),
               onSubmitted: (_) => _onSearch(),
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton(onPressed: _onSearch, child: const Text('Cari')),
+          ElevatedButton(onPressed: _onSearch, child: Text(loc.tr('common.search'))),
         ],
       ),
     );
   }
 
-  Widget _buildList(ThemeData theme) {
+  Widget _buildList(ThemeData theme, AppLocalizations loc) {
     return ListView.separated(
       controller: _scroll,
       padding: const EdgeInsets.all(16),
@@ -164,7 +166,7 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
         }
         final d = _items[index];
         final dt = DateTime.tryParse(d.time) ?? DateTime.now();
-        final when = DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dt);
+        final when = DateFormat('dd MMM yyyy, HH:mm', loc.dateLocaleTag).format(dt);
         return Card(
           child: ListTile(
             leading: const Icon(Icons.baby_changing_station, color: Colors.orange),
@@ -180,9 +182,9 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
                   await _delete(d.id);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).tr('common.edit'))),
+                PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).tr('common.delete'))),
               ],
             ),
           ),
@@ -191,7 +193,7 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations loc) {
     return ListView(
       children: [
         Padding(
@@ -200,9 +202,9 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
             children: [
               Icon(Icons.baby_changing_station, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
               const SizedBox(height: 12),
-              Text('Belum ada data diaper', style: theme.textTheme.titleMedium),
+              Text(loc.tr('diaper.empty_title'), style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text('Tarik ke bawah untuk refresh atau tambah data baru.',
+              Text(loc.tr('common.pull_to_refresh_or_add'),
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
             ],
           ),
@@ -211,14 +213,14 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(AppLocalizations loc) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Gagal memuat: $_error'),
+          Text(loc.tr('common.load_failed', {'error': '$_error'})),
           const SizedBox(height: 8),
-          OutlinedButton(onPressed: _refresh, child: const Text('Coba Lagi')),
+          OutlinedButton(onPressed: _refresh, child: Text(loc.tr('common.retry'))),
         ],
       ),
     );
@@ -261,11 +263,11 @@ class _DiaperListScreenState extends State<DiaperListScreen> {
     try {
       await DiaperService().delete(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil dihapus')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.deleted'))));
       _refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.delete_failed', {'error': '$e'}))));
     }
   }
 

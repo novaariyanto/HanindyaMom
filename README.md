@@ -2,6 +2,15 @@
 
 Aplikasi mobile terbaik untuk memantau perkembangan dan aktivitas bayi, dirancang khusus untuk ibu-ibu Indonesia.
 
+---
+
+## 🔗 Links
+
+- 📲 **Internal Testing (Google Play):** [Join as Internal Tester](https://play.google.com/apps/testing/id.whatsva.hanindyamom)  
+- 🛠️ **Admin Panel Demo:** [https://hanindyamom.whatsva.id/](https://hanindyamom.whatsva.id/)  
+
+---
+
 ## 🌟 Fitur Utama
 
 ### 📱 Autentikasi
@@ -55,127 +64,3 @@ Aplikasi mobile terbaik untuk memantau perkembangan dan aktivitas bayi, dirancan
 - Notifikasi pengingat
 - Backup dan export data
 - Kebijakan privasi & bantuan
-
-## 🎨 Desain UI
-
-- **Tema Warna**: Pink pastel (#F8BBD0) + Putih dengan aksen abu soft
-- **Typography**: Google Fonts Poppins untuk keterbacaan optimal
-- **Material Design 3**: Komponen modern dan user-friendly
-- **Bottom Navigation**: Home, Timeline, Dashboard, Settings
-- **Card UI**: Setiap log aktivitas menggunakan card yang clean
-- **Responsive**: Optimized untuk berbagai ukuran layar
-
-## 🚀 Teknologi
-
-- **Flutter**: Framework UI cross-platform
-- **Material Design 3**: Design system terbaru
-- **Google Fonts**: Typography Poppins
-- **Syncfusion Flutter Charts**: Grafik interaktif
-- **Image Picker**: Upload foto dari kamera/galeri
-- **Intl**: Internationalization dan format tanggal
-- **Shared Preferences**: Local storage
-
-## 📦 Dependencies
-
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.6
-  google_fonts: ^6.1.0
-  syncfusion_flutter_charts: ^24.2.9
-  image_picker: ^1.0.4
-  provider: ^6.1.1
-  intl: ^0.19.0
-  shared_preferences: ^2.2.2
-```
-
-## 🏗️ Struktur Proyek
-
-```
-lib/
-├── main.dart                 # Entry point aplikasi
-├── theme/
-│   └── app_theme.dart       # Tema dan styling
-├── models/
-│   ├── baby.dart            # Model data bayi
-│   ├── feeding.dart         # Model data feeding
-│   ├── diaper.dart          # Model data diaper
-│   └── sleep.dart           # Model data tidur
-├── screens/
-│   ├── auth/
-│   │   ├── login_screen.dart
-│   │   └── register_screen.dart
-│   ├── home/
-│   │   └── home_screen.dart
-│   ├── baby/
-│   │   └── baby_form_screen.dart
-│   ├── dashboard/
-│   │   └── dashboard_screen.dart
-│   ├── timeline/
-│   │   └── timeline_screen.dart
-│   ├── activities/
-│   │   ├── feeding_form_screen.dart
-│   │   ├── diaper_form_screen.dart
-│   │   └── sleep_form_screen.dart
-│   ├── settings/
-│   │   └── settings_screen.dart
-│   └── main_screen.dart     # Bottom navigation
-```
-
-## 🚀 Cara Menjalankan
-
-1. **Clone repository**
-```bash
-git clone <repository-url>
-cd hanindyamom
-```
-
-2. **Install dependencies**
-```bash
-flutter pub get
-```
-
-3. **Jalankan aplikasi**
-```bash
-flutter run
-```
-
-## 📱 Platform Support
-
-- ✅ Android
-- ✅ iOS
-- ✅ Web (responsive)
-- ✅ Windows
-- ✅ macOS
-- ✅ Linux
-
-## 🎯 Target Pengguna
-
-Aplikasi ini dirancang khusus untuk:
-- Ibu muda di Indonesia
-- Orang tua baru yang ingin memantau perkembangan bayi
-- Keluarga yang peduli dengan kesehatan dan pola bayi
-
-## 🔮 Roadmap
-
-- [ ] Integrasi backend API
-- [ ] Sinkronisasi cloud
-- [ ] Notifikasi push
-- [ ] Export data ke PDF
-- [ ] Grafik pertumbuhan bayi
-- [ ] Milestone perkembangan
-- [ ] Konsultasi dengan dokter
-- [ ] Komunitas ibu
-
-## 🤝 Kontribusi
-
-Kontribusi sangat diterima! Silakan buat issue atau pull request.
-
-## 📄 Lisensi
-
-MIT License - lihat file [LICENSE](LICENSE) untuk detail.
-
----
-
-**Dibuat dengan ❤️ untuk ibu-ibu Indonesia**

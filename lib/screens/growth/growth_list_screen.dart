@@ -5,7 +5,7 @@ import 'package:hanindyamom/providers/selected_baby_provider.dart';
 import 'package:hanindyamom/services/growth_service.dart';
 import 'package:hanindyamom/models/api_models.dart';
 import 'package:hanindyamom/screens/growth/growth_form_screen.dart';
-import 'package:hanindyamom/models/growth.dart' as ui;
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class GrowthListScreen extends StatefulWidget {
   const GrowthListScreen({super.key});
@@ -87,7 +87,7 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
     } catch (e) {
       setState(() => _loadingMore = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat halaman: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.load_failed', {'error': '$e'}))));
       }
     }
   }
@@ -106,19 +106,20 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Growth')),
+      appBar: AppBar(title: Text(loc.tr('growth.title'))),
       body: Column(
         children: [
-          _buildSearchBar(theme),
+          _buildSearchBar(theme, loc),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : (_error != null
-                    ? _buildErrorState()
+                    ? _buildErrorState(loc)
                     : RefreshIndicator(
                         onRefresh: _refresh,
-                        child: _items.isEmpty ? _buildEmptyState(theme) : _buildList(theme),
+                        child: _items.isEmpty ? _buildEmptyState(theme, loc) : _buildList(theme, loc),
                       )),
           ),
         ],
@@ -130,7 +131,7 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme) {
+  Widget _buildSearchBar(ThemeData theme, AppLocalizations loc) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -138,21 +139,21 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Cari tanggal/catatan...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: loc.tr('common.search_hint'),
+                prefixIcon: const Icon(Icons.search),
               ),
               onSubmitted: (_) => _onSearch(),
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton(onPressed: _onSearch, child: const Text('Cari')),
+          ElevatedButton(onPressed: _onSearch, child: Text(loc.tr('common.search'))),
         ],
       ),
     );
   }
 
-  Widget _buildList(ThemeData theme) {
+  Widget _buildList(ThemeData theme, AppLocalizations loc) {
     return ListView.separated(
       controller: _scroll,
       padding: const EdgeInsets.all(16),
@@ -164,7 +165,7 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
         }
         final g = _items[index];
         final date = DateTime.tryParse(g.date) ?? DateTime.now();
-        final when = DateFormat('dd MMM yyyy', 'id_ID').format(date);
+        final when = DateFormat('dd MMM yyyy', loc.dateLocaleTag).format(date);
         return Card(
           child: ListTile(
             leading: const Icon(Icons.monitor_weight, color: Colors.pink),
@@ -179,9 +180,9 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
                   await _delete(g.id);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).tr('common.edit'))),
+                PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).tr('common.delete'))),
               ],
             ),
           ),
@@ -190,7 +191,7 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations loc) {
     return ListView(
       children: [
         Padding(
@@ -199,9 +200,9 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
             children: [
               Icon(Icons.monitor_weight, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
               const SizedBox(height: 12),
-              Text('Belum ada data growth', style: theme.textTheme.titleMedium),
+              Text(loc.tr('growth.empty_title'), style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text('Tarik ke bawah untuk refresh atau tambah data baru.',
+              Text(loc.tr('common.pull_to_refresh_or_add'),
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
             ],
           ),
@@ -210,14 +211,14 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(AppLocalizations loc) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Gagal memuat: $_error'),
+          Text(loc.tr('common.load_failed', {'error': '$_error'})),
           const SizedBox(height: 8),
-          OutlinedButton(onPressed: _refresh, child: const Text('Coba Lagi')),
+          OutlinedButton(onPressed: _refresh, child: Text(loc.tr('common.retry'))),
         ],
       ),
     );
@@ -235,12 +236,10 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
   Future<void> _edit(GrowthLogApiModel g) async {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) return;
-    final date = DateTime.tryParse(g.date) ?? DateTime.now();
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GrowthFormScreen(
           babyId: babyId,
-          // form GrowthFormScreen belum mendukung edit penuh; gunakan dialog edit dari Timeline atau form untuk create baru
         ),
       ),
     );
@@ -251,11 +250,11 @@ class _GrowthListScreenState extends State<GrowthListScreen> {
     try {
       await GrowthService().delete(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil dihapus')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.deleted'))));
       _refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.delete_failed', {'error': '$e'}))));
     }
   }
 }

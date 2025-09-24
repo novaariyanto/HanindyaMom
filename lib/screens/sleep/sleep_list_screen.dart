@@ -6,6 +6,7 @@ import 'package:hanindyamom/services/sleep_service.dart';
 import 'package:hanindyamom/models/api_models.dart';
 import 'package:hanindyamom/screens/activities/sleep_form_screen.dart';
 import 'package:hanindyamom/models/sleep.dart' as ui;
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class SleepListScreen extends StatefulWidget {
   const SleepListScreen({super.key});
@@ -87,7 +88,7 @@ class _SleepListScreenState extends State<SleepListScreen> {
     } catch (e) {
       setState(() => _loadingMore = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memuat halaman: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.load_failed', {'error': '$e'}))));
       }
     }
   }
@@ -106,19 +107,20 @@ class _SleepListScreenState extends State<SleepListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sleep')),
+      appBar: AppBar(title: Text(loc.tr('sleep.title'))),
       body: Column(
         children: [
-          _buildSearchBar(theme),
+          _buildSearchBar(theme, loc),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : (_error != null
-                    ? _buildErrorState()
+                    ? _buildErrorState(loc)
                     : RefreshIndicator(
                         onRefresh: _refresh,
-                        child: _items.isEmpty ? _buildEmptyState(theme) : _buildList(theme),
+                        child: _items.isEmpty ? _buildEmptyState(theme, loc) : _buildList(theme, loc),
                       )),
           ),
         ],
@@ -130,7 +132,7 @@ class _SleepListScreenState extends State<SleepListScreen> {
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme) {
+  Widget _buildSearchBar(ThemeData theme, AppLocalizations loc) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
@@ -138,21 +140,21 @@ class _SleepListScreenState extends State<SleepListScreen> {
           Expanded(
             child: TextField(
               controller: _searchCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Cari catatan...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: loc.tr('common.search_hint'),
+                prefixIcon: const Icon(Icons.search),
               ),
               onSubmitted: (_) => _onSearch(),
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton(onPressed: _onSearch, child: const Text('Cari')),
+          ElevatedButton(onPressed: _onSearch, child: Text(loc.tr('common.search'))),
         ],
       ),
     );
   }
 
-  Widget _buildList(ThemeData theme) {
+  Widget _buildList(ThemeData theme, AppLocalizations loc) {
     return ListView.separated(
       controller: _scroll,
       padding: const EdgeInsets.all(16),
@@ -169,8 +171,8 @@ class _SleepListScreenState extends State<SleepListScreen> {
         return Card(
           child: ListTile(
             leading: const Icon(Icons.bedtime, color: Colors.purple),
-            title: Text('${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(start)} • ${DateFormat('HH:mm', 'id_ID').format(end)}'),
-            subtitle: Text('Durasi: ${duration.inHours}j ${duration.inMinutes % 60}m${s.notes != null ? '\n${s.notes}' : ''}'),
+            title: Text('${DateFormat('dd MMM yyyy, HH:mm', loc.dateLocaleTag).format(start)} • ${DateFormat('HH:mm', loc.dateLocaleTag).format(end)}'),
+            subtitle: Text('${loc.tr('sleep.duration')}: ${duration.inHours}${loc.tr('common.hour_unit')} ${duration.inMinutes % 60}${loc.tr('common.minute_unit')}${s.notes != null ? '\n${s.notes}' : ''}'),
             isThreeLine: s.notes != null,
             onTap: () => _edit(s),
             trailing: PopupMenuButton<String>(
@@ -181,9 +183,9 @@ class _SleepListScreenState extends State<SleepListScreen> {
                   await _delete(s.id);
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).tr('common.edit'))),
+                PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context).tr('common.delete'))),
               ],
             ),
           ),
@@ -192,7 +194,7 @@ class _SleepListScreenState extends State<SleepListScreen> {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
+  Widget _buildEmptyState(ThemeData theme, AppLocalizations loc) {
     return ListView(
       children: [
         Padding(
@@ -201,9 +203,9 @@ class _SleepListScreenState extends State<SleepListScreen> {
             children: [
               Icon(Icons.bedtime, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
               const SizedBox(height: 12),
-              Text('Belum ada data tidur', style: theme.textTheme.titleMedium),
+              Text(loc.tr('sleep.empty_title'), style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text('Tarik ke bawah untuk refresh atau tambah data baru.',
+              Text(loc.tr('common.pull_to_refresh_or_add'),
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6))),
             ],
           ),
@@ -212,14 +214,14 @@ class _SleepListScreenState extends State<SleepListScreen> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(AppLocalizations loc) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Gagal memuat: $_error'),
+          Text(loc.tr('common.load_failed', {'error': '$_error'})),
           const SizedBox(height: 8),
-          OutlinedButton(onPressed: _refresh, child: const Text('Coba Lagi')),
+          OutlinedButton(onPressed: _refresh, child: Text(loc.tr('common.retry'))),
         ],
       ),
     );
@@ -254,11 +256,11 @@ class _SleepListScreenState extends State<SleepListScreen> {
     try {
       await SleepService().delete(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil dihapus')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.deleted'))));
       _refresh();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.delete_failed', {'error': '$e'}))));
     }
   }
 }

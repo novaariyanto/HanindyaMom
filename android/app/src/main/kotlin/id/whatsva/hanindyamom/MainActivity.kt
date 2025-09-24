@@ -1,4 +1,4 @@
-package com.example.hanindyamom
+package id.whatsva.hanindyamom
 
 import io.flutter.embedding.android.FlutterActivity
 

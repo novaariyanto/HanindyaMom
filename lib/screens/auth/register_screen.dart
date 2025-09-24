@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/main_screen.dart';
 import 'package:hanindyamom/services/auth_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -34,8 +35,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     
     if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda harus menyetujui syarat dan ketentuan'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).tr('auth.must_accept_terms')),
         ),
       );
       return;
@@ -63,7 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registrasi gagal: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).tr('auth.register_failed', {'error': '$e'}))),
       );
     }
   }
@@ -71,11 +72,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text('Buat Akun'),
+        title: Text(loc.tr('auth.create_account_title')),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -101,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Bergabung dengan HanindyaMom',
+                      loc.tr('auth.join_title'),
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,
@@ -110,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Buat akun untuk mulai memantau perkembangan si kecil',
+                      loc.tr('auth.join_subtitle'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.primary.withOpacity(0.7),
                       ),
@@ -130,17 +132,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Name Field
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        hintText: 'Masukkan nama lengkap Anda',
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        labelText: loc.tr('auth.full_name'),
+                        hintText: loc.tr('auth.full_name_hint'),
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Nama tidak boleh kosong';
+                          return loc.tr('auth.name_required');
                         }
                         if (value.length < 2) {
-                          return 'Nama minimal 2 karakter';
+                          return loc.tr('auth.name_min');
                         }
                         return null;
                       },
@@ -152,17 +154,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Masukkan email Anda',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: loc.tr('auth.email'),
+                        hintText: loc.tr('auth.email_hint'),
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Email tidak boleh kosong';
+                          return loc.tr('auth.email_required');
                         }
                         if (!value.contains('@')) {
-                          return 'Format email tidak valid';
+                          return loc.tr('auth.email_invalid');
                         }
                         return null;
                       },
@@ -175,8 +177,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Masukkan password Anda',
+                        labelText: loc.tr('auth.password'),
+                        hintText: loc.tr('auth.password_hint'),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -193,10 +195,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password tidak boleh kosong';
+                          return loc.tr('auth.password_required');
                         }
                         if (value.length < 6) {
-                          return 'Password minimal 6 karakter';
+                          return loc.tr('auth.password_min');
                         }
                         return null;
                       },
@@ -209,8 +211,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _confirmPasswordController,
                       obscureText: !_isConfirmPasswordVisible,
                       decoration: InputDecoration(
-                        labelText: 'Konfirmasi Password',
-                        hintText: 'Masukkan ulang password Anda',
+                        labelText: loc.tr('auth.password_confirm'),
+                        hintText: loc.tr('auth.password_confirm_hint'),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -227,10 +229,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Konfirmasi password tidak boleh kosong';
+                          return loc.tr('auth.password_confirm_required');
                         }
                         if (value != _passwordController.text) {
-                          return 'Password tidak cocok';
+                          return loc.tr('auth.password_not_match');
                         }
                         return null;
                       },
@@ -260,7 +262,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Padding(
                               padding: const EdgeInsets.only(top: 12),
                               child: Text(
-                                'Saya menyetujui syarat dan ketentuan serta kebijakan privasi HanindyaMom',
+                                loc.tr('auth.terms_agree_text'),
                                 style: theme.textTheme.bodySmall,
                               ),
                             ),
@@ -288,7 +290,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                               )
-                            : const Text('Buat Akun'),
+                            : Text(loc.tr('auth.create_account_cta')),
                       ),
                     ),
 
@@ -299,14 +301,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Sudah punya akun? ',
+                          loc.tr('auth.have_account'),
                           style: theme.textTheme.bodyMedium,
                         ),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Masuk'),
+                          child: Text(loc.tr('auth.signin')),
                         ),
                       ],
                     ),

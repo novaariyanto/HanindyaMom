@@ -17,6 +17,7 @@ import 'package:hanindyamom/screens/milestone/milestone_form_screen.dart';
 import 'package:hanindyamom/models/feeding.dart' as fm;
 import 'package:hanindyamom/models/diaper.dart' as dm;
 import 'package:hanindyamom/models/sleep.dart' as sm;
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 enum ActivityFilter { all, feeding, diaper, sleep, growth, milestone, nutrition }
 
@@ -134,11 +135,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text('Timeline'),
+        title: Text(loc.tr('timeline.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -149,12 +151,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null
-              ? Center(child: Text('Gagal memuat: $_error'))
+              ? Center(child: Text(loc.tr('common.load_failed', {'error': '$_error'})))
               : Column(
                   children: [
-                    _buildFilterChips(),
+                    _buildFilterChips(loc),
                     Expanded(
-                      child: filteredActivities.isEmpty ? _buildEmptyState() : _buildTimeline(),
+                      child: filteredActivities.isEmpty ? _buildEmptyState(loc) : _buildTimeline(loc),
                     ),
                   ],
                 )),
@@ -166,17 +168,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   void _showAddMenu() {
+    final loc = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
-            ListTile(leading: const Icon(Icons.restaurant), title: const Text('Tambah Feeding'), onTap: () async { Navigator.pop(context); await _addFeeding(); }),
-            ListTile(leading: const Icon(Icons.baby_changing_station), title: const Text('Tambah Diaper'), onTap: () async { Navigator.pop(context); await _addDiaper(); }),
-            ListTile(leading: const Icon(Icons.bedtime), title: const Text('Tambah Tidur'), onTap: () async { Navigator.pop(context); await _addSleep(); }),
-            ListTile(leading: const Icon(Icons.monitor_weight), title: const Text('Tambah Growth'), onTap: () async { Navigator.pop(context); await _addGrowth(); }),
-            ListTile(leading: const Icon(Icons.emoji_events), title: const Text('Tambah Milestone'), onTap: () async { Navigator.pop(context); await _addMilestone(); }),
-            ListTile(leading: const Icon(Icons.restaurant_menu), title: const Text('Tambah Nutrisi'), onTap: () async { Navigator.pop(context); await _addNutrition(); }),
+            ListTile(leading: const Icon(Icons.restaurant), title: Text(loc.tr('timeline.add_feeding')), onTap: () async { Navigator.pop(context); await _addFeeding(); }),
+            ListTile(leading: const Icon(Icons.baby_changing_station), title: Text(loc.tr('timeline.add_diaper')), onTap: () async { Navigator.pop(context); await _addDiaper(); }),
+            ListTile(leading: const Icon(Icons.bedtime), title: Text(loc.tr('timeline.add_sleep')), onTap: () async { Navigator.pop(context); await _addSleep(); }),
+            ListTile(leading: const Icon(Icons.monitor_weight), title: Text(loc.tr('timeline.add_growth')), onTap: () async { Navigator.pop(context); await _addGrowth(); }),
+            ListTile(leading: const Icon(Icons.emoji_events), title: Text(loc.tr('timeline.add_milestone')), onTap: () async { Navigator.pop(context); await _addMilestone(); }),
+            ListTile(leading: const Icon(Icons.restaurant_menu), title: Text(loc.tr('timeline.add_nutrition')), onTap: () async { Navigator.pop(context); await _addNutrition(); }),
           ],
         ),
       ),
@@ -237,7 +240,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     if (ok == true) _fetchTimeline();
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(AppLocalizations loc) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
@@ -245,43 +248,43 @@ class _TimelineScreenState extends State<TimelineScreen> {
         child: Row(
           children: [
             _buildFilterChip(
-              label: 'Semua',
+              label: loc.tr('timeline.filter.all'),
               filter: ActivityFilter.all,
               icon: Icons.all_inclusive,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Feeding',
+              label: loc.tr('feeding.title'),
               filter: ActivityFilter.feeding,
               icon: Icons.restaurant,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Diaper',
+              label: loc.tr('diaper.title'),
               filter: ActivityFilter.diaper,
               icon: Icons.baby_changing_station,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Tidur',
+              label: loc.tr('sleep.title'),
               filter: ActivityFilter.sleep,
               icon: Icons.bedtime,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Growth',
+              label: loc.tr('growth.title'),
               filter: ActivityFilter.growth,
               icon: Icons.monitor_weight,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Milestone',
+              label: loc.tr('timeline.filter.milestone'),
               filter: ActivityFilter.milestone,
               icon: Icons.emoji_events,
             ),
             const SizedBox(width: 8),
             _buildFilterChip(
-              label: 'Nutrisi',
+              label: loc.tr('timeline.filter.nutrition'),
               filter: ActivityFilter.nutrition,
               icon: Icons.restaurant_menu,
             ),
@@ -319,7 +322,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations loc) {
     final theme = Theme.of(context);
     
     return Center(
@@ -335,14 +338,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Tidak ada aktivitas',
+              loc.tr('timeline.empty_title'),
               style: theme.textTheme.titleLarge?.copyWith(
                 color: theme.colorScheme.onBackground.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Mulai catat aktivitas bayi Anda',
+              loc.tr('timeline.empty_subtitle'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onBackground.withOpacity(0.5),
               ),
@@ -354,7 +357,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildTimeline() {
+  Widget _buildTimeline(AppLocalizations loc) {
     final groupedActivities = _groupActivitiesByDate();
     
     return RefreshIndicator(
@@ -370,9 +373,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDateHeader(date),
+              _buildDateHeader(date, loc),
               const SizedBox(height: 8),
-              ...dayActivities.map((activity) => _buildTimelineItem(activity)),
+              ...dayActivities.map((activity) => _buildTimelineItem(activity, loc)),
               const SizedBox(height: 16),
             ],
           );
@@ -404,7 +407,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return Map.fromEntries(sortedEntries);
   }
 
-  Widget _buildDateHeader(DateTime date) {
+  Widget _buildDateHeader(DateTime date, AppLocalizations loc) {
     final theme = Theme.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -412,11 +415,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
     
     String dateText;
     if (date == today) {
-      dateText = 'Hari Ini';
+      dateText = loc.tr('date.today');
     } else if (date == yesterday) {
-      dateText = 'Kemarin';
+      dateText = loc.tr('date.yesterday');
     } else {
-      dateText = DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(date);
+      dateText = DateFormat('EEEE, dd MMMM yyyy', loc.dateLocaleTag).format(date);
     }
     
     return Text(
@@ -428,7 +431,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildTimelineItem(TimelineActivity activity) {
+  Widget _buildTimelineItem(TimelineActivity activity, AppLocalizations loc) {
     final theme = Theme.of(context);
     
     return Card(
@@ -462,7 +465,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              DateFormat('HH:mm').format(activity.time),
+              DateFormat('HH:mm', loc.dateLocaleTag).format(activity.time),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),
@@ -478,23 +481,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 16),
-                  SizedBox(width: 8),
-                  Text('Edit'),
+                  const Icon(Icons.edit, size: 16),
+                  const SizedBox(width: 8),
+                  Text(AppLocalizations.of(context).tr('common.edit')),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, color: Colors.red, size: 16),
-                  SizedBox(width: 8),
-                  Text('Hapus', style: TextStyle(color: Colors.red)),
+                  const Icon(Icons.delete, color: Colors.red, size: 16),
+                  const SizedBox(width: 8),
+                  Text(AppLocalizations.of(context).tr('common.delete'), style: const TextStyle(color: Colors.red)),
                 ],
               ),
             ),
@@ -505,21 +508,22 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   void _showFilterDialog() {
+    final loc = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Filter Aktivitas'),
+        title: Text(loc.tr('timeline.filter.title')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: ActivityFilter.values.map((filter) {
             final label = switch (filter) {
-              ActivityFilter.all => 'Semua',
-              ActivityFilter.feeding => 'Feeding',
-              ActivityFilter.diaper => 'Diaper',
-              ActivityFilter.sleep => 'Tidur',
-              ActivityFilter.growth => 'Growth',
-              ActivityFilter.milestone => 'Milestone',
-              ActivityFilter.nutrition => 'Nutrisi',
+              ActivityFilter.all => loc.tr('timeline.filter.all'),
+              ActivityFilter.feeding => loc.tr('feeding.title'),
+              ActivityFilter.diaper => loc.tr('diaper.title'),
+              ActivityFilter.sleep => loc.tr('sleep.title'),
+              ActivityFilter.growth => loc.tr('growth.title'),
+              ActivityFilter.milestone => loc.tr('timeline.filter.milestone'),
+              ActivityFilter.nutrition => loc.tr('timeline.filter.nutrition'),
             };
             
             return RadioListTile<ActivityFilter>(
@@ -543,7 +547,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) return;
     if (!Validators.isUuid(activity.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID aktivitas tidak valid untuk diedit')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('timeline.invalid_id'))));
       return;
     }
     switch (activity.type) {
@@ -562,22 +566,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
       case ActivityType.milestone:
       case ActivityType.nutrition:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Edit belum tersedia untuk item ini')),
+          SnackBar(content: Text(AppLocalizations.of(context).tr('common.feature_not_available'))),
         );
         break;
     }
   }
 
   void _deleteActivity(TimelineActivity activity) {
+    final loc = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Aktivitas'),
-        content: const Text('Apakah Anda yakin ingin menghapus aktivitas ini?'),
+        title: Text(loc.tr('timeline.delete_title')),
+        content: Text(loc.tr('timeline.delete_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+            child: Text(loc.tr('common.cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -587,7 +592,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Hapus'),
+            child: Text(loc.tr('common.delete')),
           ),
         ],
       ),
@@ -622,13 +627,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
       Navigator.of(context).pop();
       await _fetchTimeline();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivitas telah dihapus')),
+        SnackBar(content: Text(AppLocalizations.of(context).tr('timeline.deleted'))),
       );
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).tr('common.delete_failed', {'error': '$e'}))),
       );
     }
   }
@@ -854,33 +859,4 @@ _TypeMap _mapType(String t) {
   }
 }
 
-// Mencoba mengekstrak UUID dari payload timeline untuk berbagai tipe aktivitas
-String _extractId(Map<String, dynamic> e, String typeKey) {
-  // prioritas: id -> ${type}_id -> nested object id
-  String? id = (e['id'] ?? e['${typeKey}_id'])?.toString();
-  if (id != null && id.trim().isNotEmpty) return id.trim();
-  // beberapa backend mengemas objek nested, mis: feeding { id: ... }
-  final nested = e[typeKey];
-  if (nested is Map<String, dynamic>) {
-    final nestedId = nested['id']?.toString();
-    if (nestedId != null && nestedId.trim().isNotEmpty) return nestedId.trim();
-  }
-  return '';
-}
-
-String _typeKey(ActivityType t) {
-  switch (t) {
-    case ActivityType.feeding:
-      return 'feeding';
-    case ActivityType.diaper:
-      return 'diaper';
-    case ActivityType.sleep:
-      return 'sleep';
-    case ActivityType.growth:
-      return 'growth';
-    case ActivityType.milestone:
-      return 'milestone';
-    case ActivityType.nutrition:
-      return 'nutrition';
-  }
-}
+// util yang tidak digunakan di implementasi saat ini telah dihapus

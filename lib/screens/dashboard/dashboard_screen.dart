@@ -8,6 +8,7 @@ import 'package:hanindyamom/screens/timeline/timeline_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:hanindyamom/providers/selected_baby_provider.dart';
 import 'package:hanindyamom/services/timeline_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Baby? baby;
@@ -70,11 +71,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final baby = widget.baby;
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: Text(baby?.name ?? 'Dashboard'),
+        title: Text(baby?.name ?? loc.tr('dashboard.title')),
         actions: [
           IconButton(
             icon: const Icon(Icons.timeline),
@@ -91,7 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null
-              ? Center(child: Text('Gagal memuat: $_error'))
+              ? Center(child: Text(loc.tr('common.load_failed', {'error': '$_error'})))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -99,11 +101,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       if (baby != null) _buildBabyHeader(baby),
                       const SizedBox(height: 24),
-                      _buildTodaysSummary(),
+                      _buildTodaysSummary(loc),
                       const SizedBox(height: 24),
-                      _buildActivityChart(),
+                      _buildActivityChart(loc),
                       const SizedBox(height: 24),
-                      _buildQuickActions(),
+                      _buildQuickActions(loc),
                     ],
                   ),
                 )),
@@ -175,7 +177,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildTodaysSummary() {
+  Widget _buildTodaysSummary(AppLocalizations loc) {
     final theme = Theme.of(context);
     final totalSleep = Duration(minutes: _sleepMinutes);
 
@@ -183,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ringkasan Hari Ini',
+          loc.tr('dashboard.today_summary'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -194,9 +196,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildSummaryCard(
                 icon: Icons.restaurant,
-                title: 'Feeding',
+                title: loc.tr('feeding.title'),
                 value: '$_feedingCount',
-                subtitle: 'kali',
+                subtitle: loc.tr('common.times_unit'),
                 color: Colors.blue,
                 onTap: () {
                   Navigator.of(context).pushNamed('/feeding_list');
@@ -207,9 +209,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildSummaryCard(
                 icon: Icons.baby_changing_station,
-                title: 'Diaper',
+                title: loc.tr('diaper.title'),
                 value: '$_diaperCount',
-                subtitle: 'kali',
+                subtitle: loc.tr('common.times_unit'),
                 color: Colors.orange,
                 onTap: () {
                   Navigator.of(context).pushNamed('/diaper_list');
@@ -220,9 +222,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildSummaryCard(
                 icon: Icons.bedtime,
-                title: 'Tidur',
-                value: '${totalSleep.inHours}j',
-                subtitle: '${totalSleep.inMinutes % 60}m',
+                title: loc.tr('sleep.title'),
+                value: '${totalSleep.inHours}${loc.tr('common.hour_unit')}',
+                subtitle: '${totalSleep.inMinutes % 60}${loc.tr('common.minute_unit')}',
                 color: Colors.purple,
                 onTap: () {
                   Navigator.of(context).pushNamed('/sleep_list');
@@ -280,7 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildActivityChart() {
+  Widget _buildActivityChart(AppLocalizations loc) {
     final theme = Theme.of(context);
     
     final chartData = _chartData.isNotEmpty ? _chartData : _generateChartData();
@@ -289,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Aktivitas 7 Hari Terakhir',
+          loc.tr('dashboard.last7days'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -313,14 +315,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     dataSource: chartData,
                     xValueMapper: (ActivityData data, _) => data.day,
                     yValueMapper: (ActivityData data, _) => data.feeding,
-                    name: 'Feeding',
+                    name: loc.tr('feeding.title'),
                     color: Colors.blue,
                   ),
                   ColumnSeries<ActivityData, String>(
                     dataSource: chartData,
                     xValueMapper: (ActivityData data, _) => data.day,
                     yValueMapper: (ActivityData data, _) => data.diaper,
-                    name: 'Diaper',
+                    name: loc.tr('diaper.title'),
                     color: Colors.orange,
                   ),
                 ],
@@ -356,14 +358,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return days[weekday - 1];
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(AppLocalizations loc) {
     final theme = Theme.of(context);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Aksi Cepat',
+          loc.tr('dashboard.quick_actions'),
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -374,7 +376,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildActionButton(
                 icon: Icons.restaurant,
-                label: 'Feeding',
+                label: loc.tr('feeding.title'),
                 color: Colors.blue,
                 onTap: () {
                   Navigator.of(context).push(
@@ -391,7 +393,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildActionButton(
                 icon: Icons.baby_changing_station,
-                label: 'Diaper',
+                label: loc.tr('diaper.title'),
                 color: Colors.orange,
                 onTap: () {
                   Navigator.of(context).push(
@@ -408,7 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildActionButton(
                 icon: Icons.bedtime,
-                label: 'Tidur',
+                label: loc.tr('sleep.title'),
                 color: Colors.purple,
                 onTap: () {
                   Navigator.of(context).push(
@@ -445,9 +447,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 8),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w500,
-                  color: color,
+                  color: null,
                 ),
               ),
             ],

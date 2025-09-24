@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hanindyamom/screens/auth/register_screen.dart';
 import 'package:hanindyamom/screens/main_screen.dart';
 import 'package:hanindyamom/services/auth_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).tr('auth.login_failed', {'error': '$e'}))),
       );
     }
   }
@@ -50,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -78,14 +80,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'HanindyaMom',
+                      loc.tr('app.title'),
                       style: theme.textTheme.headlineMedium?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Aplikasi Terbaik untuk Ibu & Bayi',
+                      loc.tr('auth.app_tagline'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.primary.withOpacity(0.7),
                       ),
@@ -98,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Welcome Text
               Text(
-                'Selamat Datang!',
+                loc.tr('auth.welcome'),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -106,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Masuk ke akun Anda untuk melanjutkan',
+                loc.tr('auth.signin_prompt'),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onBackground.withOpacity(0.7),
                 ),
@@ -124,17 +126,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Masukkan email Anda',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: loc.tr('auth.email'),
+                        hintText: loc.tr('auth.email_hint'),
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Email tidak boleh kosong';
+                          return loc.tr('auth.email_required');
                         }
                         if (!value.contains('@')) {
-                          return 'Format email tidak valid';
+                          return loc.tr('auth.email_invalid');
                         }
                         return null;
                       },
@@ -147,8 +149,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Masukkan password Anda',
+                        labelText: loc.tr('auth.password'),
+                        hintText: loc.tr('auth.password_hint'),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -165,10 +167,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password tidak boleh kosong';
+                          return loc.tr('auth.password_required');
                         }
                         if (value.length < 6) {
-                          return 'Password minimal 6 karakter';
+                          return loc.tr('auth.password_min');
                         }
                         return null;
                       },
@@ -182,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _login,
-                        child: _isLoading
+                      child: _isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
@@ -193,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               )
-                            : const Text('Masuk'),
+                            : Text(loc.tr('auth.signin')),
                       ),
                     ),
 
@@ -204,12 +206,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         // TODO: Implement forgot password
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur lupa password belum tersedia'),
+                          SnackBar(
+                            content: Text(loc.tr('auth.forgot_password_toast')),
                           ),
                         );
                       },
-                      child: const Text('Lupa Password?'),
+                      child: Text(loc.tr('auth.forgot_password')),
                     ),
                   ],
                 ),
@@ -224,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'atau',
+                      loc.tr('common.or'),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onBackground.withOpacity(0.5),
                       ),
@@ -252,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-                child: const Text('Buat Akun Baru'),
+                child: Text(loc.tr('auth.create_account')),
               ),
 
               const SizedBox(height: 24),

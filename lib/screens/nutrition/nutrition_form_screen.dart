@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:hanindyamom/services/nutrition_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class NutritionFormScreen extends StatefulWidget {
   final String babyId;
@@ -53,7 +54,7 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     // Validasi babyId (UUID)
     if (widget.babyId.isEmpty || widget.babyId.length != 36) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID bayi tidak valid')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.invalid_baby_id'))));
       return;
     }
     setState(() => _isLoading = true);
@@ -77,7 +78,7 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Menu harian disimpan')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('nutrition.saved'))));
     } on DioException catch (e) {
       String msg = e.message ?? 'Gagal menyimpan';
       final data = e.response?.data;
@@ -99,18 +100,19 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
       }
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $msg')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': msg}))));
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$e'}))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Catat Menu Harian')),
+      appBar: AppBar(title: Text(loc.tr('nutrition.record_title'))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -121,8 +123,8 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.schedule),
-                  title: const Text('Waktu Makan'),
-                  subtitle: Text(DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(_time)),
+                  title: Text(loc.tr('nutrition.meal_time')),
+                  subtitle: Text(DateFormat('dd MMM yyyy, HH:mm', loc.dateLocaleTag).format(_time)),
                   trailing: const Icon(Icons.arrow_drop_down),
                   onTap: _selectTime,
                 ),
@@ -130,19 +132,19 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Menu',
-                  prefixIcon: Icon(Icons.restaurant_menu),
+                decoration: InputDecoration(
+                  labelText: loc.tr('nutrition.menu_name'),
+                  prefixIcon: const Icon(Icons.restaurant_menu),
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Nama menu wajib diisi' : null,
+                validator: (v) => (v == null || v.trim().isEmpty) ? loc.tr('nutrition.menu_name_required') : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _notesController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Catatan (opsional)',
-                  prefixIcon: Icon(Icons.note),
+                decoration: InputDecoration(
+                  labelText: loc.tr('nutrition.notes_optional'),
+                  prefixIcon: const Icon(Icons.note),
                 ),
               ),
               const SizedBox(height: 12),
@@ -151,8 +153,8 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
                   children: [
                     ListTile(
                       leading: const Icon(Icons.photo_camera),
-                      title: const Text('Upload Foto (opsional)'),
-                      subtitle: Text(_file?.path.split('/').last.split('\\').last ?? 'Tidak ada file'),
+                      title: Text(loc.tr('nutrition.upload_optional')),
+                      subtitle: Text(_file?.path.split('/').last.split('\\').last ?? loc.tr('nutrition.no_file')),
                       trailing: _picking ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward_ios, size: 14),
                       onTap: _picking
                           ? null
@@ -171,13 +173,13 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
                                 final size = await f.length();
                                 if (size > 2 * 1024 * 1024) {
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ukuran foto melebihi 2MB')));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.tr('image.too_large_2mb'))));
                                   return;
                                 }
                                 final lower = x.name.toLowerCase();
                                 if (!(lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png'))){
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Format gambar harus JPG/PNG')));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.tr('image.invalid_format'))));
                                   return;
                                 }
                                 if (!mounted) return;
@@ -186,7 +188,7 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
                                 });
                               } catch (err) {
                                 if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $err')));
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.tr('image.pick_failed', {'error': '$err'}))));
                               } finally {
                                 if (mounted) setState(() => _picking = false);
                               }
@@ -202,7 +204,7 @@ class _NutritionFormScreenState extends State<NutritionFormScreen> {
                   onPressed: _isLoading ? null : _save,
                   child: _isLoading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
-                      : const Text('Simpan'),
+                      : Text(loc.tr('common.save')),
                 ),
               ),
             ],

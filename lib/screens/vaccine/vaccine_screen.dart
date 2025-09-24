@@ -5,6 +5,7 @@ import 'package:hanindyamom/services/vaccine_service.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:hanindyamom/models/vaccine.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class VaccineScreen extends StatefulWidget {
   const VaccineScreen({super.key});
@@ -45,12 +46,13 @@ class _VaccineScreenState extends State<VaccineScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Jadwal Vaksin')),
+      appBar: AppBar(title: Text(loc.tr('vaccine.title'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null
-              ? Center(child: Text('Gagal memuat: $_error'))
+              ? Center(child: Text(loc.tr('common.load_failed', {'error': '$_error'})))
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
@@ -62,7 +64,7 @@ class _VaccineScreenState extends State<VaccineScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.vaccines, color: Colors.blue),
                         title: Text(v.vaccineName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                        subtitle: Text('${DateFormat('dd MMM yyyy', 'id_ID').format(date)}\nStatus: ${v.status}${v.notes == null ? '' : '\nCatatan: ${v.notes}'}'),
+                        subtitle: Text('${DateFormat('dd MMM yyyy', loc.dateLocaleTag).format(date)}\n${loc.tr('vaccine.status')}: ${v.status}${v.notes == null ? '' : '\n${loc.tr('vaccine.notes')}: ${v.notes}'}'),
                         isThreeLine: true,
                         trailing: PopupMenuButton<String>(
                           onSelected: (val) async {
@@ -76,10 +78,10 @@ class _VaccineScreenState extends State<VaccineScreen> {
                               _openForm(initial: v);
                             }
                           },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'done', child: Text('Tandai Selesai')),
-                            PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                          itemBuilder: (context) => [
+                            PopupMenuItem(value: 'done', child: Text(loc.tr('vaccine.mark_done'))),
+                            PopupMenuItem(value: 'edit', child: Text(loc.tr('common.edit'))),
+                            PopupMenuItem(value: 'delete', child: Text(loc.tr('common.delete'))),
                           ],
                         ),
                       ),
@@ -125,10 +127,10 @@ class _VaccineScreenState extends State<VaccineScreen> {
     } on DioException catch (e) {
       final msg = e.response?.data is Map<String, dynamic> ? (e.response?.data['message'] ?? e.message) : e.message;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $msg')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$msg'}))));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$e'}))));
     }
   }
 }
@@ -169,8 +171,9 @@ class _VaccineDialogState extends State<_VaccineDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Tambah Vaksin' : 'Edit Vaksin'),
+      title: Text(widget.initial == null ? loc.tr('vaccine.add_title') : loc.tr('vaccine.edit_title')),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -179,8 +182,8 @@ class _VaccineDialogState extends State<_VaccineDialog> {
             children: [
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Nama Vaksin'),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
+                decoration: InputDecoration(labelText: loc.tr('vaccine.name_label')),
+                validator: (v) => v == null || v.trim().isEmpty ? loc.tr('common.required') : null,
               ),
               const SizedBox(height: 8),
               Row(
@@ -192,7 +195,7 @@ class _VaccineDialogState extends State<_VaccineDialog> {
                       if (d != null) setState(() => _date = d);
                     },
                     icon: const Icon(Icons.event),
-                    label: const Text('Pilih Tanggal'),
+                    label: Text(loc.tr('common.pick_date')),
                   ),
                 ],
               ),
@@ -200,11 +203,11 @@ class _VaccineDialogState extends State<_VaccineDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Status'),
+                  Text(loc.tr('vaccine.status')),
                   SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'scheduled', label: Text('Scheduled')),
-                      ButtonSegment(value: 'done', label: Text('Done')),
+                    segments: [
+                      ButtonSegment(value: 'scheduled', label: Text(loc.tr('vaccine.status_scheduled'))),
+                      ButtonSegment(value: 'done', label: Text(loc.tr('vaccine.status_done'))),
                     ],
                     selected: {_status},
                     onSelectionChanged: (s) => setState(() => _status = s.first),
@@ -214,14 +217,14 @@ class _VaccineDialogState extends State<_VaccineDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesCtrl,
-                decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+                decoration: InputDecoration(labelText: loc.tr('vaccine.notes_optional')),
               ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(loc.tr('common.cancel'))),
         ElevatedButton(
           onPressed: () {
             if (!_formKey.currentState!.validate()) return;
@@ -233,7 +236,7 @@ class _VaccineDialogState extends State<_VaccineDialog> {
             );
             Navigator.pop(context, payload);
           },
-          child: const Text('Simpan'),
+          child: Text(loc.tr('common.save')),
         ),
       ],
     );

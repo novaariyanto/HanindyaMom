@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
+import 'package:hanindyamom/providers/locale_provider.dart';
 import 'package:hanindyamom/theme/app_theme.dart';
 import 'package:hanindyamom/screens/auth/login_screen.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +21,7 @@ void main() async {
   
   // Initialize date formatting for Indonesian locale
   await initializeDateFormatting('id_ID', null);
+  await initializeDateFormatting('en_US', null);
   
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
@@ -42,28 +45,30 @@ class HanindyaMomApp extends StatelessWidget {
           return repo;
         }),
         ChangeNotifierProvider(create: (_) => SelectedBabyProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()..loadSavedLocale()),
       ],
-      child: MaterialApp(
-        title: 'HanindyaMom',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const _Bootstrapper(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/feeding_list': (context) => const FeedingListRouteGuard(),
-          '/diaper_list': (context) => const DiaperListRouteGuard(),
-          '/sleep_list': (context) => const SleepListRouteGuard(),
-          '/growth_list': (context) => const GrowthListRouteGuard(),
-        },
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('id', 'ID'),
-          Locale('en', 'US'),
-        ],
+      child: Builder(
+        builder: (context) => MaterialApp(
+          title: 'HanindyaMom',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          locale: context.watch<LocaleProvider>().locale,
+          home: const _Bootstrapper(),
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/feeding_list': (context) => const FeedingListRouteGuard(),
+            '/diaper_list': (context) => const DiaperListRouteGuard(),
+            '/sleep_list': (context) => const SleepListRouteGuard(),
+            '/growth_list': (context) => const GrowthListRouteGuard(),
+          },
+          localizationsDelegates: const [
+            AppLocalizationsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
   }
@@ -112,7 +117,9 @@ class FeedingListRouteGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) {
-      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+      return Builder(builder: (context) {
+        return Scaffold(body: Center(child: Text(AppLocalizations.of(context).tr('common.select_baby_first'))));
+      });
     }
     return const FeedingListScreen();
   }
@@ -124,7 +131,9 @@ class DiaperListRouteGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) {
-      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+      return Builder(builder: (context) {
+        return Scaffold(body: Center(child: Text(AppLocalizations.of(context).tr('common.select_baby_first'))));
+      });
     }
     return const DiaperListScreen();
   }
@@ -136,7 +145,9 @@ class SleepListRouteGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) {
-      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+      return Builder(builder: (context) {
+        return Scaffold(body: Center(child: Text(AppLocalizations.of(context).tr('common.select_baby_first'))));
+      });
     }
     return const SleepListScreen();
   }
@@ -148,7 +159,9 @@ class GrowthListRouteGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     final babyId = context.read<SelectedBabyProvider>().babyId;
     if (babyId == null) {
-      return const Scaffold(body: Center(child: Text('Pilih bayi terlebih dahulu')));
+      return Builder(builder: (context) {
+        return Scaffold(body: Center(child: Text(AppLocalizations.of(context).tr('common.select_baby_first'))));
+      });
     }
     return const GrowthListScreen();
   }

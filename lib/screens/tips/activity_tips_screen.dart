@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hanindyamom/models/activity_tip.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class ActivityTipsScreen extends StatelessWidget {
   final int ageMonths;
@@ -9,15 +10,16 @@ class ActivityTipsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tips = ActivityTipsRepo.forAgeMonths(ageMonths);
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Activity Tips')),
+      appBar: AppBar(title: Text(loc.tr('tips.title'))),
       body: tips.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  'Belum ada tips untuk usia ini. Coba usia lain.',
+                  loc.tr('tips.empty_for_age'),
                   style: theme.textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),

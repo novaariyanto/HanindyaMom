@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hanindyamom/models/feeding.dart';
 import 'package:hanindyamom/services/feeding_service.dart';
+import 'package:hanindyamom/l10n/app_localizations.dart';
 
 class FeedingFormScreen extends StatefulWidget {
   final String babyId;
@@ -94,14 +95,15 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       Navigator.of(context).pop(true);
+      final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isEditing ? 'Feeding diperbarui' : 'Feeding ditambahkan')),
+        SnackBar(content: Text(isEditing ? loc.tr('feeding.updated') : loc.tr('feeding.added'))),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).tr('common.save_failed', {'error': '$e'}))),
       );
     }
   }
@@ -109,11 +111,12 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context);
     
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Feeding' : 'Tambah Feeding'),
+        title: Text(isEditing ? loc.tr('feeding.form.title_edit') : loc.tr('feeding.form.title_add')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -147,13 +150,13 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Feeding',
+                              loc.tr('feeding.title'),
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
-                              'Catat waktu menyusui atau memberi formula',
+                              loc.tr('feeding.form.subtitle'),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface.withOpacity(0.7),
                               ),
@@ -170,7 +173,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
 
               // Feeding Type
               Text(
-                'Jenis Feeding',
+                loc.tr('feeding.form.type_label'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -203,7 +206,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
 
               // Start Time
               Text(
-                'Waktu Mulai',
+                loc.tr('feeding.form.start_time'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -212,7 +215,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.access_time),
-                  title: const Text('Waktu Mulai'),
+                  title: Text(loc.tr('feeding.form.start_time')),
                   subtitle: Text(DateFormat('HH:mm').format(_startTime)),
                   trailing: const Icon(Icons.arrow_drop_down),
                   onTap: _selectStartTime,
@@ -223,7 +226,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
 
               // Duration
               Text(
-                'Durasi (menit)',
+                '${loc.tr('feeding.form.duration_label')} (${loc.tr('common.minute_unit')})',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -232,21 +235,21 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
               TextFormField(
                 controller: _durationController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: 'Contoh: 15',
-                  prefixIcon: Icon(Icons.timer),
-                  suffixText: 'menit',
+                decoration: InputDecoration(
+                  hintText: loc.tr('feeding.form.duration_hint'),
+                  prefixIcon: const Icon(Icons.timer),
+                  suffixText: loc.tr('common.minute_unit'),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Durasi tidak boleh kosong';
+                    return loc.tr('feeding.form.duration_required');
                   }
                   final duration = int.tryParse(value);
                   if (duration == null || duration <= 0) {
-                    return 'Durasi harus berupa angka positif';
+                    return loc.tr('feeding.form.duration_positive');
                   }
                   if (duration > 120) {
-                    return 'Durasi tidak boleh lebih dari 120 menit';
+                    return loc.tr('feeding.form.duration_max');
                   }
                   return null;
                 },
@@ -257,7 +260,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
               // Amount (only for formula)
               if (showAmountField) ...[
                 Text(
-                  'Jumlah Formula (ml)',
+                  loc.tr('feeding.form.amount_label'),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -266,22 +269,22 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
                 TextFormField(
                   controller: _amountController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Contoh: 120',
-                    prefixIcon: Icon(Icons.local_drink),
+                  decoration: InputDecoration(
+                    hintText: loc.tr('feeding.form.amount_hint'),
+                    prefixIcon: const Icon(Icons.local_drink),
                     suffixText: 'ml',
                   ),
                   validator: (value) {
                     if (showAmountField && (value == null || value.isEmpty)) {
-                      return 'Jumlah formula tidak boleh kosong';
+                      return loc.tr('feeding.form.amount_required');
                     }
                     if (value != null && value.isNotEmpty) {
                       final amount = double.tryParse(value);
                       if (amount == null || amount <= 0) {
-                        return 'Jumlah harus berupa angka positif';
+                        return loc.tr('feeding.form.amount_positive');
                       }
                       if (amount > 500) {
-                        return 'Jumlah tidak boleh lebih dari 500ml';
+                        return loc.tr('feeding.form.amount_max');
                       }
                     }
                     return null;
@@ -292,7 +295,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
 
               // Notes
               Text(
-                'Catatan (Opsional)',
+                loc.tr('feeding.form.notes_label'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -301,9 +304,9 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Tambahkan catatan jika perlu...',
-                  prefixIcon: Icon(Icons.note),
+                decoration: InputDecoration(
+                  hintText: loc.tr('feeding.form.notes_hint'),
+                  prefixIcon: const Icon(Icons.note),
                 ),
               ),
 
@@ -325,7 +328,7 @@ class _FeedingFormScreenState extends State<FeedingFormScreen> {
                             ),
                           ),
                         )
-                      : Text(isEditing ? 'Simpan Perubahan' : 'Simpan Feeding'),
+                      : Text(loc.tr('common.save')),
                 ),
               ),
 
